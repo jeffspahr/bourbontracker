@@ -15,7 +15,6 @@ import (
 
 type PayloadIn struct {
 	Products  []struct {
-		ProductName string `json:"productName"`
 		ProductID   string `json:"productId"`
 		StoreInfo   struct {
 			Distance    interface{} `json:"distance"`
@@ -30,7 +29,7 @@ type PayloadIn struct {
 			Quantity int `json:"quantity"`
 			StoreID  int `json:"storeId"`
 		} `json:"storeInfo"`
-	} `json:"products.py"`
+	} `json:"products"`
 	URL string `json:"url"`
 }
 
@@ -93,11 +92,10 @@ func main() {
 	}
 
 	pOut := PayloadOut{}
-	fmt.Println("testbeforefor")
 
 	for i := range pIn.Products {
 		pOut.Timestamp = time.Now().Format(time.RFC3339)
-		pOut.ProductName = "Buffalo Trace"
+		pOut.ProductName = productsList[pIn.Products[i].ProductID]
 		pOut.ProductID = pIn.Products[i].ProductID
 		pOut.Latitude = pIn.Products[i].StoreInfo.Latitude
 		pOut.Longitude = pIn.Products[i].StoreInfo.Longitude
@@ -111,9 +109,6 @@ func main() {
 		}
 
 		fmt.Printf("%s", pOutJSON)
-		fmt.Printf("%s","test")
 	}
-	fmt.Println("testafterfor")
 
-	//fmt.Println(string(body))
 }
