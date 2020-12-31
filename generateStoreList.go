@@ -35,17 +35,17 @@ func main() {
 	//fmt.Println(stores)
 	//fmt.Println(len(stores))
 	// If the file doesn't exist, create it, or append to the file
-	f, err := os.OpenFile("stores", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+	file, err := os.OpenFile("stores", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for i := 0; i < len(stores); i++ {
-		if _, err := f.WriteString(stores[i]+"\n"); err != nil {
-			f.Close() // ignore error; Write error takes precedence
+		if _, err := file.WriteString(stores[i]+"\n"); err != nil {
+			file.Close() // ignore error; Write error takes precedence
 			log.Fatal(err)
 		}
 	}
-	if err := f.Close(); err != nil {
+	if err := file.Close(); err != nil {
 		log.Fatal(err)
 	}
 }
