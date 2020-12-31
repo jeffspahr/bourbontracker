@@ -2,47 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
-	//"fmt"
-	log "github.com/sirupsen/logrus"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	//log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	//"strconv"
-	//"encoding/json"
 )
 
-func initLogging() {
-	profile := flag.String("profile", "test", "Environment profile")
-	flag.Parse()
 
-	textFormat := log.TextFormatter{
-		TimestampFormat: "2006-01-02T15:04:05.000",
-		FullTimestamp:   true,
-	}
-	jsonFormat := log.JSONFormatter{
-		FieldMap: log.FieldMap{
-			log.FieldKeyTime:  "@timestamp",
-			log.FieldKeyLevel: "log.level",
-			log.FieldKeyMsg:   "message",
-		},
-	}
-
-	if *profile == "dev" {
-		log.SetFormatter(&textFormat)
-	} else {
-		log.SetFormatter(&jsonFormat)
-	}
-}
-
-func getFields(jsonMessage string) log.Fields {
-	fields := log.Fields{}
-	json.Unmarshal([]byte(jsonMessage), &fields)
-	return fields
-}
-
-type Payload struct {
-	Timestamp string `json:"@timestamp"`
-	LogLevel  string `json:"log.level"`
+type PayloadIn struct {
 	Products  []struct {
 		ProductName string `json:"productName"`
 		ProductID   string `json:"productId"`
@@ -59,16 +30,40 @@ type Payload struct {
 			Quantity int `json:"quantity"`
 			StoreID  int `json:"storeId"`
 		} `json:"storeInfo"`
-	} `json:"products"`
+	} `json:"products.py"`
 	URL string `json:"url"`
 }
 
+type PayloadOut struct {
+	Timestamp string `json:"@timestamp"`
+	ProductName string `json:"bt.productName"`
+	ProductID   string `json:"bt.productId"`
+	Latitude    float64 `json:"geo.lat""`
+	Longitude   float64  `json:"geo.lon"`
+	//Latitude    float64     `json:"bt.latitude"`
+	//Longitude   float64     `json:"bt.longitude"`
+	Quantity int `json:"bt.quantity"`
+	StoreID  int `json:"bt.storeId"`
+	StoreURL string `json:"bt.storeurl"`
+}
+
 func main() {
-	initLogging()
+
+	fileProducts, err := os.Open("products.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fileProducts.Close()
+	var productsList map[string]string
+	if err := json.NewDecoder(fileProducts).Decode(&productsList); err != nil {
+		log.Fatal(err)
+	}
+
+	//for key, element := range products{
+	//	println("Key:", key, "=>", "Element:", element)
+	//}
 
 	client := &http.Client{}
-
-	//req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore?storeNumbers=416&productCodes=018006", nil)
 	req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
 	if err != nil {
 		log.Fatal(err)
@@ -77,7 +72,7 @@ func main() {
 	req.Header.Add("Accept", "application/json")
 	q := req.URL.Query()
 	q.Add("storeNumbers", "416")
-	q.Add("productCodes", "018006")
+	q.Add("productCodes", "018006,021602")
 	req.URL.RawQuery = q.Encode()
 	resp, err := client.Do(req)
 	if err != nil {
@@ -90,29 +85,35 @@ func main() {
 	resp.Body.Close()
 
 	//fmt.Printf("%s", body)
+
+	pIn := PayloadIn{}
+	err = json.Unmarshal(body, &pIn)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pOut := PayloadOut{}
+	fmt.Println("testbeforefor")
+
+	for i := range pIn.Products {
+		pOut.Timestamp = time.Now().Format(time.RFC3339)
+		pOut.ProductName = "Buffalo Trace"
+		pOut.ProductID = pIn.Products[i].ProductID
+		pOut.Latitude = pIn.Products[i].StoreInfo.Latitude
+		pOut.Longitude = pIn.Products[i].StoreInfo.Longitude
+		pOut.Quantity = pIn.Products[i].StoreInfo.Quantity
+		pOut.StoreID = pIn.Products[i].StoreInfo.StoreID
+		pOut.StoreURL = "https://www.abc.virginia.gov/" + pIn.URL
+
+		pOutJSON, err := json.Marshal(pOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("%s", pOutJSON)
+		fmt.Printf("%s","test")
+	}
+	fmt.Println("testafterfor")
+
 	//fmt.Println(string(body))
-	//log.Info(&body)
-	//log.Field{"message": &body}
-
-	//log.WithFields(log.Fields{
-	//	"json": &body,
-	//}).Info("message")
-
-	log.WithFields(getFields(string(body))).Info()
-
-	//log.WithFields(log.Fields{
-	//	"message": string(body),
-	//}).Info("message")
-	//
-	//res, err := http.Get("https://www.abc.virginia.gov/webapi/inventory/mystore?storeNumbers=416&productCodes=018006")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//body, err := ioutil.ReadAll(res.Body)
-	//res.Body.Close()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//fmt.Printf("%s", body)
-
 }
