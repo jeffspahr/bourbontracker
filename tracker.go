@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -48,6 +49,31 @@ type PayloadOut struct {
 
 func main() {
 
+	//Load store list from a file into an array
+	var stores[]string
+
+	file, err := os.Open("stores")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		stores=append(stores, scanner.Text())
+	}
+	fmt.Println(stores)
+	fmt.Println(len(stores))
+	for i := 0; i < len(stores); i++ {
+		fmt.Println(stores[i])
+	}
+
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	//Load products we care about from a file into a map
 	fileProducts, err := os.Open("products.json")
 	if err != nil {
 		log.Fatal(err)
@@ -57,10 +83,6 @@ func main() {
 	if err := json.NewDecoder(fileProducts).Decode(&productsList); err != nil {
 		log.Fatal(err)
 	}
-
-	//for key, element := range products{
-	//	println("Key:", key, "=>", "Element:", element)
-	//}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
