@@ -62,12 +62,6 @@ func main() {
 	for scanner.Scan() {
 		stores=append(stores, scanner.Text())
 	}
-	fmt.Println(stores)
-	fmt.Println(len(stores))
-	for i := 0; i < len(stores); i++ {
-		fmt.Println(stores[i])
-	}
-
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
@@ -83,6 +77,14 @@ func main() {
 	if err := json.NewDecoder(fileProducts).Decode(&productsList); err != nil {
 		log.Fatal(err)
 	}
+	//Create string of comma delimited products to be used in the query string
+	productListString := ""
+	for key := range productsList {
+		if productListString == ""{
+			productListString = key
+		}
+		productListString += "," + key
+	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
@@ -93,7 +95,7 @@ func main() {
 	req.Header.Add("Accept", "application/json")
 	q := req.URL.Query()
 	q.Add("storeNumbers", "416")
-	q.Add("productCodes", "018006,021602")
+	q.Add("productCodes", productListString)
 	req.URL.RawQuery = q.Encode()
 	resp, err := client.Do(req)
 	if err != nil {
