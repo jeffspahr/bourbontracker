@@ -86,53 +86,56 @@ func main() {
 		productListString += "," + key
 	}
 
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	req.Header.Add("Content-type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	q := req.URL.Query()
-	q.Add("storeNumbers", "416")
-	q.Add("productCodes", productListString)
-	req.URL.RawQuery = q.Encode()
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	resp.Body.Close()
+	for h := 0; h < len(stores); h++ {
+		client := &http.Client{}
+		req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		req.Header.Add("Content-type", "application/json")
+		req.Header.Add("Accept", "application/json")
+		q := req.URL.Query()
+		q.Add("storeNumbers", stores[h])
+		q.Add("productCodes", productListString)
+		req.URL.RawQuery = q.Encode()
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatal(err)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		resp.Body.Close()
 
-	//fmt.Printf("%s", body)
+		//fmt.Printf("%s", body)
 
-	pIn := PayloadIn{}
-	err = json.Unmarshal(body, &pIn)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pOut := PayloadOut{}
-
-	for i := range pIn.Products {
-		pOut.Timestamp = time.Now().Format(time.RFC3339)
-		pOut.ProductName = productsList[pIn.Products[i].ProductID]
-		pOut.ProductID = pIn.Products[i].ProductID
-		pOut.Latitude = pIn.Products[i].StoreInfo.Latitude
-		pOut.Longitude = pIn.Products[i].StoreInfo.Longitude
-		pOut.Quantity = pIn.Products[i].StoreInfo.Quantity
-		pOut.StoreID = pIn.Products[i].StoreInfo.StoreID
-		pOut.StoreURL = "https://www.abc.virginia.gov/" + pIn.URL
-
-		pOutJSON, err := json.Marshal(pOut)
+		pIn := PayloadIn{}
+		err = json.Unmarshal(body, &pIn)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("%s", pOutJSON)
+		pOut := PayloadOut{}
+
+		for i := range pIn.Products {
+			pOut.Timestamp = time.Now().Format(time.RFC3339)
+			pOut.ProductName = productsList[pIn.Products[i].ProductID]
+			pOut.ProductID = pIn.Products[i].ProductID
+			pOut.Latitude = pIn.Products[i].StoreInfo.Latitude
+			pOut.Longitude = pIn.Products[i].StoreInfo.Longitude
+			pOut.Quantity = pIn.Products[i].StoreInfo.Quantity
+			pOut.StoreID = pIn.Products[i].StoreInfo.StoreID
+			pOut.StoreURL = "https://www.abc.virginia.gov/" + pIn.URL
+
+			pOutJSON, err := json.Marshal(pOut)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("%s", pOutJSON)
+		}
+
 	}
 
 }
