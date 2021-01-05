@@ -54,7 +54,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/jeffspahr/bourbontracker:latest
-            ghcr.io/jeffspahr/bourbontracker:0.1.0          
+            ghcr.io/jeffspahr/bourbontracker:0.1.0
             
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

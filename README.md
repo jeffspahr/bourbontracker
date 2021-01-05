@@ -13,4 +13,11 @@ Tested on python3.
 ```go run generateStoreList.go```
 
 # Run the Tracker
+## Without building
 ```go run tracker.go```
+
+## Run using Docker
+```
+docker pull ghcr.io/jeffspahr/bourbontracker:0.1.0
+docker run ghcr.io/jeffspahr/bourbontracker
+```
