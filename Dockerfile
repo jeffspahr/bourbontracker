@@ -10,7 +10,7 @@ WORKDIR /src/
 COPY tracker.go .
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 		go build \
-			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
+#			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
 			-o tracker
 
 FROM alpine:13.12.3
