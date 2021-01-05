@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 #			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
 			-o tracker
 
-FROM alpine:13.12.3
+FROM alpine:3.12.3
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /src/tracker .
