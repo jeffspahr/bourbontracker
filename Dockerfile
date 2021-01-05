@@ -17,4 +17,6 @@ FROM alpine:3.12.3
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /src/tracker .
+COPY stores .
+COPY products.json .
 CMD ["./tracker"]
