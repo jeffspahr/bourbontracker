@@ -133,7 +133,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			fmt.Println(pOutJSON)
+			fmt.Println(string(pOutJSON))
 		}
 
 	}
