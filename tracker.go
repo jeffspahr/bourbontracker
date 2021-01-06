@@ -13,11 +13,10 @@ import (
 	"net/http"
 )
 
-
 type PayloadIn struct {
-	Products  []struct {
-		ProductID   string `json:"productId"`
-		StoreInfo   struct {
+	Products []struct {
+		ProductID string `json:"productId"`
+		StoreInfo struct {
 			Distance    interface{} `json:"distance"`
 			Latitude    float64     `json:"latitude"`
 			Longitude   float64     `json:"longitude"`
@@ -35,22 +34,22 @@ type PayloadIn struct {
 }
 
 type PayloadOut struct {
-	Timestamp string `json:"@timestamp"`
-	ProductName string `json:"bt.productName"`
-	ProductID   string `json:"bt.productId"`
-	Latitude    float64 `json:"geo.lat""`
-	Longitude   float64  `json:"geo.lon"`
+	Timestamp   string  `json:"@timestamp"`
+	ProductName string  `json:"bt.productName"`
+	ProductID   string  `json:"bt.productId"`
+	Latitude    float64 `json:"geo.lat"`
+	Longitude   float64 `json:"geo.lon"`
 	//Latitude    float64     `json:"bt.latitude"`
 	//Longitude   float64     `json:"bt.longitude"`
-	Quantity int `json:"bt.quantity"`
-	StoreID  int `json:"bt.storeId"`
+	Quantity int    `json:"bt.quantity"`
+	StoreID  int    `json:"bt.storeId"`
 	StoreURL string `json:"bt.storeurl"`
 }
 
 func main() {
 
 	//Load store list from a file into an array
-	var stores[]string
+	var stores []string
 
 	file, err := os.Open("stores")
 	if err != nil {
@@ -60,7 +59,7 @@ func main() {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		stores=append(stores, scanner.Text())
+		stores = append(stores, scanner.Text())
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -73,6 +72,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer fileProducts.Close()
+
 	var productsList map[string]string
 	if err := json.NewDecoder(fileProducts).Decode(&productsList); err != nil {
 		log.Fatal(err)
@@ -80,7 +80,7 @@ func main() {
 	//Create string of comma delimited products to be used in the query string
 	productListString := ""
 	for key := range productsList {
-		if productListString == ""{
+		if productListString == "" {
 			productListString = key
 		}
 		productListString += "," + key
@@ -133,7 +133,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			fmt.Printf("%s", pOutJSON)
+			fmt.Println(pOutJSON)
 		}
 
 	}
