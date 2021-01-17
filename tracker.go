@@ -48,6 +48,8 @@ type PayloadOut struct {
 
 func main() {
 
+	//Initialize exponential backoff in case of non 200 response
+	waitTime := 1
 	//Load store list from a file into an array
 	var stores []string
 
@@ -106,7 +108,29 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		resp.Body.Close()
+		err = resp.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Sometimes the api returns a 403.  We might be querying too fast.
+		if resp.StatusCode != 200 {
+			//TODO add a structured log and print the response code when this happens
+			//fmt.Println(resp.StatusCode)
+			time.Sleep(time.Duration(waitTime) * time.Second)
+			waitTime = waitTime * 2
+			if waitTime > 256 {
+				//Don't try forever. Give up before hitting 5 min.
+				os.Exit(1)
+			}
+			h--
+			continue
+		}
+
+		if resp.StatusCode == 200 {
+			//reset backoff
+			waitTime = 1
+		}
 
 		//fmt.Printf("%s", body)
 
