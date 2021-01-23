@@ -5,6 +5,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+
+version: 1
 update_configs:
   - package_manager: "docker"
     directory: "/"
