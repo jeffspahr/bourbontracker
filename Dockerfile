@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM golang:1.15.6 as builder
+FROM --platform=$TARGETPLATFORM golang:1.15.7 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 #			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
 			-o tracker
 
-FROM alpine:3.12.3
+FROM alpine:3.13.0
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY stores .
