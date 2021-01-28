@@ -1,0 +1,34 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: bourbontracker
+  namespace: bourbontracker
+spec:
+  version: 7.10.2
+  nodeSets:
+  - name: default
+    count: 2
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+    podTemplate:
+      spec:
+        initContainers:
+        - name: sysctl
+          securityContext:
+            privileged: true
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        containers:
+        - name: elasticsearch
+          # specify resource limits and requests
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 4Gi
+              cpu: 2
+          env:
+          - name: ES_JAVA_OPTS
+            value: "-Xms3g -Xmx3g"
