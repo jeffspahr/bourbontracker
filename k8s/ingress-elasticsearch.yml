@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: lets-encrypt-issuer
+    ingress.kubernetes.io/protocol: https
+  name: elasticsearch
+  namespace: bourbontracker
+spec:
+  rules:
+  - host: es-bt.spahr.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bourbontracker-es-http
+            port:
+              number: 9200
+  tls: # < placing a host in the TLS config will indicate a certificate should be created
+  - hosts:
+    - es-bt.spahr.dev
+    secretName: ingress-elasticsearch-cert # < cert-manager will store the created certificate in this secret.
