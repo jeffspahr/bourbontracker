@@ -1,0 +1,16 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: bourbontracker
+  namespace: bourbontracker
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: bourbontracker
+            image: ghcr.io/jeffspahr/bourbontracker:0.1.0
+            imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure

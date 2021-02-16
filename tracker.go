@@ -37,8 +37,8 @@ type PayloadOut struct {
 	Timestamp   string  `json:"@timestamp"`
 	ProductName string  `json:"bt.productName"`
 	ProductID   string  `json:"bt.productId"`
-	Latitude    float64 `json:"geo.lat"`
-	Longitude   float64 `json:"geo.lon"`
+	Latitude    float64 `json:"geo.location.lat"`
+	Longitude   float64 `json:"geo.location.lon"`
 	//Latitude    float64     `json:"bt.latitude"`
 	//Longitude   float64     `json:"bt.longitude"`
 	Quantity int    `json:"bt.quantity"`
