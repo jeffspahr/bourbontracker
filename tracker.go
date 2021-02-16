@@ -42,7 +42,7 @@ type PayloadOut struct {
 	Geo struct {
 		Latitude  float64 `json:"lat"`
 		Longitude float64 `json:"lon"`
-	} `json:"geo.location"`
+	} `json:"destination.geo.location"`
 	Quantity int    `json:"bt.quantity"`
 	StoreID  int    `json:"bt.storeId"`
 	StoreURL string `json:"bt.storeurl"`
