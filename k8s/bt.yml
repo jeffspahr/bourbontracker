@@ -12,5 +12,5 @@ spec:
           containers:
           - name: bourbontracker
             image: ghcr.io/jeffspahr/bourbontracker:0.1.0
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
           restartPolicy: OnFailure
