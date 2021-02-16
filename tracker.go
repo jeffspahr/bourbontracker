@@ -34,13 +34,15 @@ type PayloadIn struct {
 }
 
 type PayloadOut struct {
-	Timestamp   string  `json:"@timestamp"`
-	ProductName string  `json:"bt.productName"`
-	ProductID   string  `json:"bt.productId"`
-	Latitude    float64 `json:"destination.geo.location.lat"`
-	Longitude   float64 `json:"destination.geo.location.lon"`
-	//Latitude    float64     `json:"bt.latitude"`
-	//Longitude   float64     `json:"bt.longitude"`
+	Timestamp   string `json:"@timestamp"`
+	ProductName string `json:"bt.productName"`
+	ProductID   string `json:"bt.productId"`
+	// Latitude    float64 `json:"destination.geo.location.lat"`
+	// Longitude   float64 `json:"destination.geo.location.lon"`
+	Geo struct {
+		Latitude  float64 `json:"lat"`
+		Longitude float64 `json:"lon"`
+	} `json:"geo.location"`
 	Quantity int    `json:"bt.quantity"`
 	StoreID  int    `json:"bt.storeId"`
 	StoreURL string `json:"bt.storeurl"`
@@ -146,8 +148,8 @@ func main() {
 			pOut.Timestamp = time.Now().Format(time.RFC3339)
 			pOut.ProductName = productsList[pIn.Products[i].ProductID]
 			pOut.ProductID = pIn.Products[i].ProductID
-			pOut.Latitude = pIn.Products[i].StoreInfo.Latitude
-			pOut.Longitude = pIn.Products[i].StoreInfo.Longitude
+			pOut.Geo.Latitude = pIn.Products[i].StoreInfo.Latitude
+			pOut.Geo.Longitude = pIn.Products[i].StoreInfo.Longitude
 			pOut.Quantity = pIn.Products[i].StoreInfo.Quantity
 			pOut.StoreID = pIn.Products[i].StoreInfo.StoreID
 			pOut.StoreURL = "https://www.abc.virginia.gov/" + pIn.URL
