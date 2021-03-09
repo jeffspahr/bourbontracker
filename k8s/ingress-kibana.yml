@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: lets-encrypt-issuer
+  name: kibana
+  namespace: bourbontracker
+spec:
+  rules:
+  - host: bt.spahr.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kibana
+            port:
+              number: 5601
+  tls: # < placing a host in the TLS config will indicate a certificate should be created
+  - hosts:
+    - bt.spahr.dev
+    secretName: ingress-kibana-cert # < cert-manager will store the created certificate in this secret.
