@@ -8,7 +8,7 @@ ARG TARGETOS
 ARG GO_LDFLAGS
 ARG GO_TAGS
 
-WORKDIR /go/
+WORKDIR /go/src/github.com/jeffspahr/bourbontracker/
 COPY tracker.go .
 COPY go.mod .
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
