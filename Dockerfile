@@ -8,8 +8,7 @@ ARG TARGETOS
 ARG GO_LDFLAGS
 ARG GO_TAGS
 
-WORKDIR /src/
-COPY tracker.go .
+COPY . .
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 		go build \
 #			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
