@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM golang:1.16.3 as builder
+FROM --platform=$TARGETPLATFORM golang:1.16.5 as builder
 LABEL maintainer=spahrj@gmail.com
 LABEL org.opencontainers.image.source https://github.com/jeffspahr/bourbontracker
 
@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 #			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
 			-o tracker
 
-FROM alpine:3.13.4
+FROM alpine:3.13.5
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY stores .
