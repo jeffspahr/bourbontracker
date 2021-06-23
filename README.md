@@ -21,3 +21,5 @@ Tested on python3.
 docker pull ghcr.io/jeffspahr/bourbontracker:0.1.0
 docker run ghcr.io/jeffspahr/bourbontracker
 ```
+# Architecture in Kubernetes
+ <img src="bourbontracker.png">
