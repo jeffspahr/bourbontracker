@@ -4,7 +4,7 @@ metadata:
   name: bourbontracker
   namespace: bourbontracker
 spec:
-  version: 7.12.0
+  version: 7.15.1
   nodeSets:
   - name: default
     count: 2
