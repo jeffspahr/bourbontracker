@@ -14,7 +14,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: kibana
+            name: kibana-kb-http
             port:
               number: 5601
   tls: # < placing a host in the TLS config will indicate a certificate should be created
