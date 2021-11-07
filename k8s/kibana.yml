@@ -4,7 +4,7 @@ metadata:
   name: kibana
   namespace: bourbontracker
 spec:
-  version: 7.10.2
+  version: 7.15.1
   count: 1
   elasticsearchRef:
     name: "bourbontracker"
