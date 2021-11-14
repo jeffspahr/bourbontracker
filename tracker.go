@@ -158,8 +158,10 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			fmt.Println(string(pOutJSON))
+			
+			if pOut.Quantity > 0 {
+				fmt.Println(string(pOutJSON))
+			}
 		}
 
 	}
