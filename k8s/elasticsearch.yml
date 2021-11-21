@@ -4,7 +4,7 @@ metadata:
   name: bourbontracker
   namespace: bourbontracker
 spec:
-  version: 7.15.1
+  version: 7.15.2
   nodeSets:
   - name: default
     count: 2
@@ -25,7 +25,7 @@ spec:
           resources:
             requests:
               memory: 4Gi
-              cpu: 2
+              cpu: 1
             limits:
               memory: 4Gi
               cpu: 2
