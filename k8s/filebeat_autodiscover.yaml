@@ -5,7 +5,7 @@ metadata:
   namespace: bourbontracker
 spec:
   type: filebeat
-  version: 7.16.0
+  version: 7.16.1
   elasticsearchRef:
     name: bourbontracker
     namespace: bourbontracker
