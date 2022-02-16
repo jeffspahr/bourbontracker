@@ -9,9 +9,6 @@ spec:
   - name: default
     count: 2
     config:
-      node.master: true
-      node.data: true
-      node.ingest: true
     podTemplate:
       spec:
         initContainers:
