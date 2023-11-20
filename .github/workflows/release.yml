@@ -22,7 +22,7 @@ jobs:
         run: npm install
 
       - name: Configure release-please
-        uses: google-github-actions/release-please-action@v2
+        uses: google-github-actions/release-please-action@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: auto
