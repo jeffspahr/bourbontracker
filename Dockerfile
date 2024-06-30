@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM golang:1.22.1 as builder
+FROM --platform=$TARGETPLATFORM golang:1.22.4 as builder
 LABEL maintainer=spahrj@gmail.com
 LABEL org.opencontainers.image.source https://github.com/jeffspahr/bourbontracker
 
