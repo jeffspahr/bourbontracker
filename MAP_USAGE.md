@@ -16,11 +16,13 @@ The tracker has been modified to output inventory data to a JSON file that can b
 - Standalone HTML file with embedded Google Maps visualization
 - Features:
   - Interactive map centered on Virginia
+  - **Product filter dropdown** - Select specific bourbons to display on the map
   - Color-coded markers (green = high stock, orange = medium, red = low)
   - Click markers to see product details
   - Statistics dashboard showing total items, unique products, stores, and last update
   - Responsive design
   - Groups multiple products at the same store location
+  - Real-time filtering with "Select All" and "Clear Filter" buttons
 
 ### 3. Updated Dockerfile
 - Now includes map.html in the container image
@@ -144,6 +146,21 @@ data:
 4. Set up GitHub Actions to run the tracker and commit updates
 
 ## Map Features
+
+### Product Filter
+Filter the map to show only specific bourbon products:
+- **Dropdown menu** displays all available products sorted by total quantity
+- Each product shows format: "Product Name (X bottles at Y locations)"
+- **Multi-select** - Hold Ctrl/Cmd to select multiple products
+- **Select All** button - View all products at once
+- **Clear Filter** button - Reset to show all inventory
+- Map and statistics update in real-time when filter changes
+- Only shows stores that have the selected product(s)
+
+Example use cases:
+- Find all stores with Pappy Van Winkle
+- Compare availability of Buffalo Trace vs Blanton's
+- Focus on high-demand allocated items only
 
 ### Marker Colors
 - **Green**: Store has > 10 items in stock
