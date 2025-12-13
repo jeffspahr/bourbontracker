@@ -177,7 +177,7 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 				// Create inventory item
 				item := tracker.InventoryItem{
 					Timestamp:   now,
-					ProductName: productName,
+					ProductName: tracker.NormalizeProductName(productName),
 					ProductID:   fmt.Sprintf("wake-%s", plu), // Prefix with "wake-" to differentiate from VA codes
 					Location:    location,
 					Quantity:    quantity,

@@ -200,7 +200,7 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 			storeID, _ := strconv.Atoi(t.stores[h])
 			item := tracker.InventoryItem{
 				Timestamp:   time.Now(),
-				ProductName: t.products[pIn.Products[i].ProductID],
+				ProductName: tracker.NormalizeProductName(t.products[pIn.Products[i].ProductID]),
 				ProductID:   pIn.Products[i].ProductID,
 				Location: tracker.Location{
 					Latitude:  pIn.Products[i].StoreInfo.Latitude,
