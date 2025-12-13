@@ -22,3 +22,6 @@ inventory-test.json
 
 # API keys and secrets
 config.js
+
+# macOS
+.DS_Store

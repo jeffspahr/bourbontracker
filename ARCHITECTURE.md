@@ -78,20 +78,28 @@ type InventoryItem struct {
 
 ### Wake County, NC (`pkg/nc/wake`)
 
-**Status:** Placeholder - Not yet implemented
+**Status:** ✅ Implemented
 
 **Website:** https://wakeabc.com/search-results
 
-**Implementation Options:**
-1. Web scraping (no public API available)
-2. Form submission automation
-3. HTML parsing for results
+**Implementation:**
+- HTML parsing using goquery library
+- POST form submission with product names
+- Extracts product data from `<div class="wake-product">` elements
+- 15 store locations across Wake County
+
+**Features:**
+- Product name-based search (not codes)
+- Per-store inventory quantities
+- PLU (product lookup) codes
+- Store addresses (no coordinates provided)
 
 **Differences from VA:**
 - County-level system (not statewide)
-- Product name search (not codes)
-- May not have per-store inventory
-- Requires different data extraction approach
+- Uses product names instead of numeric codes
+- Returns HTML instead of JSON
+- No geographic coordinates (could be geocoded if needed)
+- Wake County-specific PLU codes (prefixed with "wake-")
 
 ### Future Counties
 
