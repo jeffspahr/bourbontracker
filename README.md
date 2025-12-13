@@ -6,9 +6,50 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/LICENSE)
 
-This is intended to run in Kubernetes, but it can be modified to fit your environment.  The app will output inventory data in JSON format which will be picked up by Filebeat and shipped to an Elasticsearch cluster.  I plan to include the end to end manifests to deploy this in any Kubnernetes cluster.
+Track rare bourbon availability across Virginia ABC stores with real-time inventory monitoring and interactive map visualization.
 
-The end goal is to be able to visualize and alert on geolocation inventory data.
+## Features
+
+- 🗺️ **Interactive Google Maps visualization** - See bourbon inventory on a color-coded map
+- 📊 **47 tracked products** - Rare and allocated bourbons (Pappy, Blanton's, Buffalo Trace, etc.)
+- 🏪 **391 stores** - Complete coverage of Virginia ABC locations
+- ⚡ **Real-time data** - Query live inventory via Virginia ABC API
+- 🔒 **Secure** - API keys stored in gitignored config files
+- 🐳 **Containerized** - Docker image with multi-arch support (amd64/arm64)
+
+## Visualization Options
+
+### Option 1: Google Maps (Simple, Recommended)
+
+Interactive map showing bourbon locations and quantities. Perfect for local use or simple deployments.
+
+**Quick Start:**
+```bash
+# Copy config template and add your Google Maps API key
+cp config.example.js config.js
+# Edit config.js and add your API key
+
+# Run tracker to generate inventory data
+go build tracker.go
+./tracker
+
+# Start local web server
+python3 -m http.server 8000
+
+# Open http://localhost:8000/map.html in your browser
+```
+
+See [MAP_USAGE.md](MAP_USAGE.md) for detailed setup instructions.
+
+### Option 2: Elasticsearch + Kibana (Advanced)
+
+Full ELK stack deployment for historical data, time-series analysis, and alerting. Ideal for production Kubernetes environments.
+
+The app outputs inventory data in JSON format which is picked up by Filebeat and shipped to an Elasticsearch cluster. End-to-end Kubernetes manifests are included in the `k8s/` directory.
+
+See Architecture section below for details.
+
+---
 
 Inspired by https://github.com/misfitlabs/pappytracker
 
@@ -27,11 +68,15 @@ Tested on python3.
 ```bash
 # Pull the latest version
 docker pull ghcr.io/jeffspahr/bourbontracker:latest
-docker run ghcr.io/jeffspahr/bourbontracker
+
+# Run and save inventory.json to current directory
+docker run --rm -v $(pwd):/root ghcr.io/jeffspahr/bourbontracker
 
 # Or specify a version
 docker pull ghcr.io/jeffspahr/bourbontracker:1.0.1
-docker run ghcr.io/jeffspahr/bourbontracker:1.0.1
+docker run --rm -v $(pwd):/root ghcr.io/jeffspahr/bourbontracker:1.0.1
 ```
+
+**Note:** The `-v $(pwd):/root` flag mounts the current directory so `inventory.json` is written to your host machine for use with the Google Maps visualization.
 # Architecture in Kubernetes
  <img src="bourbontracker.png">
