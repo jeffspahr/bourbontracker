@@ -96,6 +96,9 @@ func main() {
 	// Add base delay between all requests to avoid rate limiting
 	baseDelay := 250 * time.Millisecond
 
+	// Track retries per store to avoid infinite loops on bad stores
+	storeRetries := make(map[int]int)
+
 	for h := 0; h < len(stores); h++ {
 		// Sleep before each request to be polite to the API
 		if h > 0 {
@@ -109,6 +112,8 @@ func main() {
 		}
 		req.Header.Add("Content-type", "application/json")
 		req.Header.Add("Accept", "application/json")
+		req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		req.Header.Add("Referer", "https://www.abc.virginia.gov/")
 		q := req.URL.Query()
 		q.Add("storeNumbers", stores[h])
 		q.Add("productCodes", productListString)
@@ -126,17 +131,24 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Sometimes the api returns a 403.  We might be querying too fast.
+		// Sometimes the api returns a 403 or 400.  Handle errors appropriately.
 		if resp.StatusCode != 200 {
-			fmt.Fprintf(os.Stderr, "Got HTTP %d for store %s (attempt with %ds backoff)\n", resp.StatusCode, stores[h], waitTime)
+			storeRetries[h]++
+			fmt.Fprintf(os.Stderr, "Got HTTP %d for store %s (retry %d, backoff %ds)\n", resp.StatusCode, stores[h], storeRetries[h], waitTime)
+
+			// Skip stores that consistently fail (likely invalid store numbers)
+			if storeRetries[h] >= 5 {
+				fmt.Fprintf(os.Stderr, "Skipping store %s after %d failed attempts\n", stores[h], storeRetries[h])
+				waitTime = 1 // Reset backoff when skipping
+				continue
+			}
+
 			time.Sleep(time.Duration(waitTime) * time.Second)
 			waitTime = waitTime * 2
 			if waitTime > 512 {
-				// Increased max wait from 256 to 512 seconds
-				fmt.Fprintf(os.Stderr, "Max retries exceeded, giving up\n")
-				os.Exit(1)
+				waitTime = 512 // Cap backoff at 512s
 			}
-			h--
+			h-- // Retry this store
 			continue
 		}
 
