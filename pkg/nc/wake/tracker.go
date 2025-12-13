@@ -168,7 +168,11 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 
 			if quantity > 0 {
 				// Get store coordinates
-				location := getStoreLocation(address)
+				location, found := getStoreLocation(address)
+				if !found {
+					fmt.Fprintf(log.Writer(), "  WARNING: No coordinates found for address: %s\n", address)
+					fmt.Fprintf(log.Writer(), "  Run ./scripts/update-wake-geocoding.sh to update store coordinates\n")
+				}
 
 				// Create inventory item
 				item := tracker.InventoryItem{
