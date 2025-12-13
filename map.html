@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virginia ABC Bourbon Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        #header p {
+            font-size: 14px;
+            color: #bdc3c7;
+            margin-top: 5px;
+        }
+
+        #stats {
+            background: #34495e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+        }
+
+        .stat {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #bdc3c7;
+        }
+
+        .stat-value {
+            font-weight: 600;
+        }
+
+        #map {
+            flex: 1;
+        }
+
+        .info-window {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 300px;
+        }
+
+        .info-window h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .info-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 14px;
+        }
+
+        .info-detail:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .quantity-high {
+            color: #27ae60;
+        }
+
+        .quantity-medium {
+            color: #f39c12;
+        }
+
+        .quantity-low {
+            color: #e74c3c;
+        }
+
+        .store-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .store-link:hover {
+            background: #2980b9;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 16px;
+            color: #2c3e50;
+            z-index: 1000;
+        }
+
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #e74c3c;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Virginia ABC Bourbon Tracker</h1>
+        <p>Real-time inventory of rare bourbon across Virginia ABC stores</p>
+    </div>
+
+    <div id="stats">
+        <div class="stat">
+            <span class="stat-label">Total Items:</span>
+            <span class="stat-value" id="total-items">-</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Unique Products:</span>
+            <span class="stat-value" id="unique-products">-</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Stores with Stock:</span>
+            <span class="stat-value" id="stores-count">-</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Last Updated:</span>
+            <span class="stat-value" id="last-updated">-</span>
+        </div>
+    </div>
+
+    <div id="loading">Loading inventory data...</div>
+    <div id="error"></div>
+    <div id="map"></div>
+
+    <script>
+        let map;
+        let markers = [];
+        let infoWindow;
+
+        function initMap() {
+            // Center on Virginia
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 7,
+                center: { lat: 37.5407, lng: -78.4364 },
+                mapTypeControl: true,
+                mapTypeControlOptions: {
+                    style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+                    position: google.maps.ControlPosition.TOP_RIGHT
+                },
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            infoWindow = new google.maps.InfoWindow();
+
+            // Load inventory data
+            loadInventory();
+        }
+
+        async function loadInventory() {
+            try {
+                const response = await fetch('inventory.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const inventory = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (inventory.length === 0) {
+                    showError('No inventory found. The tracker may not have run yet.');
+                    return;
+                }
+
+                displayInventory(inventory);
+                updateStats(inventory);
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                document.getElementById('loading').style.display = 'none';
+                showError('Failed to load inventory data. Make sure inventory.json exists in the same directory as this HTML file.');
+            }
+        }
+
+        function displayInventory(inventory) {
+            // Group inventory by store location
+            const storeGroups = {};
+
+            inventory.forEach(item => {
+                const key = `${item['geo.location'].lat},${item['geo.location'].lon}`;
+                if (!storeGroups[key]) {
+                    storeGroups[key] = {
+                        lat: item['geo.location'].lat,
+                        lon: item['geo.location'].lon,
+                        storeId: item['bt.storeId'],
+                        items: []
+                    };
+                }
+                storeGroups[key].items.push(item);
+            });
+
+            // Create markers
+            Object.values(storeGroups).forEach(store => {
+                const totalQuantity = store.items.reduce((sum, item) => sum + item['bt.quantity'], 0);
+
+                // Marker color based on total quantity
+                let markerColor = 'red';
+                if (totalQuantity > 10) markerColor = 'green';
+                else if (totalQuantity > 5) markerColor = 'orange';
+
+                const marker = new google.maps.Marker({
+                    position: { lat: store.lat, lng: store.lon },
+                    map: map,
+                    title: `Store ${store.storeId} - ${store.items.length} product(s)`,
+                    icon: `http://maps.google.com/mapfiles/ms/icons/${markerColor}-dot.png`
+                });
+
+                marker.addListener('click', () => {
+                    showInfoWindow(marker, store);
+                });
+
+                markers.push(marker);
+            });
+
+            // Fit map to markers
+            if (markers.length > 0) {
+                const bounds = new google.maps.LatLngBounds();
+                markers.forEach(marker => bounds.extend(marker.getPosition()));
+                map.fitBounds(bounds);
+            }
+        }
+
+        function showInfoWindow(marker, store) {
+            let content = `<div class="info-window">`;
+            content += `<h3>Store #${store.storeId}</h3>`;
+
+            store.items.forEach(item => {
+                const quantityClass = item['bt.quantity'] > 5 ? 'quantity-high' :
+                                     item['bt.quantity'] > 2 ? 'quantity-medium' : 'quantity-low';
+
+                content += `
+                    <div style="margin: 15px 0; padding: 10px 0; border-top: 2px solid #ecf0f1;">
+                        <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px;">${item['bt.productName']}</div>
+                        <div class="info-detail">
+                            <span class="info-label">Quantity:</span>
+                            <span class="info-value ${quantityClass}">${item['bt.quantity']}</span>
+                        </div>
+                        <div class="info-detail">
+                            <span class="info-label">Product ID:</span>
+                            <span class="info-value">${item['bt.productId']}</span>
+                        </div>
+                        <a href="${item['bt.storeurl']}" target="_blank" class="store-link">View on ABC Website</a>
+                    </div>
+                `;
+            });
+
+            content += `</div>`;
+
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+        }
+
+        function updateStats(inventory) {
+            const totalItems = inventory.reduce((sum, item) => sum + item['bt.quantity'], 0);
+            const uniqueProducts = new Set(inventory.map(item => item['bt.productId'])).size;
+            const uniqueStores = new Set(inventory.map(item => item['bt.storeId'])).size;
+
+            // Get most recent timestamp
+            const timestamps = inventory.map(item => new Date(item['@timestamp']));
+            const lastUpdated = new Date(Math.max(...timestamps));
+
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('unique-products').textContent = uniqueProducts;
+            document.getElementById('stores-count').textContent = uniqueStores;
+            document.getElementById('last-updated').textContent = lastUpdated.toLocaleString();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+
+    <!-- Replace YOUR_API_KEY_HERE with your actual Google Maps API key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap" async defer></script>
+</body>
+</html>
