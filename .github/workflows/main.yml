@@ -130,23 +130,18 @@ jobs:
           echo "Verifying stores file exists..."
           docker run --rm --platform=${{ matrix.platform }} --entrypoint test $IMAGE_TAG -f /root/stores
 
-      - name: Test container starts
+      - name: Test container runs successfully
         run: |
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
-          echo "Starting container..."
-          CONTAINER_ID=$(docker run -d --platform=${{ matrix.platform }} $IMAGE_TAG)
-          echo "Container ID: $CONTAINER_ID"
+          echo "Running container..."
 
-          # Wait a few seconds to ensure it doesn't crash immediately
-          sleep 5
-
-          # Check if container is still running
-          if docker ps | grep -q $CONTAINER_ID; then
-            echo "✓ Container is running successfully"
-            docker stop $CONTAINER_ID
+          # The tracker runs once and exits - this is expected behavior
+          # We just need to verify it runs without errors
+          if docker run --platform=${{ matrix.platform }} $IMAGE_TAG; then
+            echo "✓ Container ran successfully"
           else
-            echo "✗ Container failed to stay running"
-            docker logs $CONTAINER_ID
+            EXIT_CODE=$?
+            echo "✗ Container exited with error code: $EXIT_CODE"
             exit 1
           fi
 
