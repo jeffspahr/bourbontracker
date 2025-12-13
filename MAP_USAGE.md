@@ -35,13 +35,21 @@ The tracker has been modified to output inventory data to a JSON file that can b
 4. Create an API key under "APIs & Services" → "Credentials"
 5. (Optional) Restrict the API key to your domain
 
-### Step 2: Update map.html
+### Step 2: Configure API Key (Secure Method)
 
-Open `map.html` and replace `YOUR_API_KEY_HERE` on the last line with your actual API key:
+Copy the example config file and add your API key:
 
-```html
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_ACTUAL_API_KEY&callback=initMap" async defer></script>
+```bash
+cp config.example.js config.js
 ```
+
+Then edit `config.js` and replace `YOUR_API_KEY_HERE` with your actual API key:
+
+```javascript
+const GOOGLE_MAPS_API_KEY = 'YOUR_ACTUAL_API_KEY';
+```
+
+**Important:** `config.js` is in `.gitignore` and will NOT be committed to version control, keeping your API key secure.
 
 ### Step 3: Run the Tracker
 
