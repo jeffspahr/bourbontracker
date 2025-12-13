@@ -182,7 +182,7 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 					Location:    location,
 					Quantity:    quantity,
 					StoreID:     fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
-					StoreURL:    "https://wakeabc.com/search-results",
+					StoreURL:    "https://wakeabc.com/search-our-inventory/",
 					State:       "NC",
 					County:      "Wake",
 				}

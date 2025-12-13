@@ -208,7 +208,7 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 				},
 				Quantity: pIn.Products[i].StoreInfo.Quantity,
 				StoreID:  strconv.Itoa(storeID),
-				StoreURL: "https://www.abc.virginia.gov/" + pIn.URL,
+				StoreURL: fmt.Sprintf("https://www.abc.virginia.gov/stores/store-%d", storeID),
 				State:    "VA",
 				County:   "",
 			}
