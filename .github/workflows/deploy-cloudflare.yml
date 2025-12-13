@@ -20,14 +20,19 @@ jobs:
       - name: Build tracker
         run: go build -o tracker ./cmd/tracker
 
-      - name: Create config.js with API key
-        run: |
-          echo "// Google Maps API configuration" > config.js
-          echo "const GOOGLE_MAPS_API_KEY = '${{ secrets.GOOGLE_MAPS_API_KEY }}';" >> config.js
-
       - name: Run tracker
         run: ./tracker -va -wake
         timeout-minutes: 10
+
+      - name: Prepare deployment with embedded API key
+        run: |
+          mkdir -p deploy
+          # Copy static files
+          cp inventory.json favicon.svg social-preview.svg deploy/
+          cp logo*.svg deploy/
+          # Inject API key directly into index.html (bypasses Cloudflare Access issue)
+          sed 's|<script src="config.js".*</script>|<script>const GOOGLE_MAPS_API_KEY = "${{ secrets.GOOGLE_MAPS_API_KEY }}"; loadGoogleMaps();</script>|' index.html > deploy/index.html
+          ls -la deploy/
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
@@ -35,8 +40,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: cask-watch
-          directory: .
-          # Only deploy these files:
+          directory: deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload inventory artifact
