@@ -27,11 +27,20 @@ wrangler pages deploy . --project-name=cask-watch
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or use existing)
-3. Enable Google+ API
+3. Configure OAuth consent screen:
+   - Go to "APIs & Services" → "OAuth consent screen"
+   - Select "External" user type (unless using Google Workspace)
+   - Fill in required fields (app name, user support email, developer email)
+   - No scopes needed for Cloudflare Access
 4. Create OAuth 2.0 credentials:
-   - Application type: Web application
-   - Authorized redirect URIs: `https://<your-team>.cloudflareaccess.com/cdn-cgi/access/callback`
-5. Save Client ID and Client Secret
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "OAuth 2.0 Client ID"
+   - Application type: **Web application**
+   - Name: Cask Watch (or your preference)
+   - Authorized redirect URIs: `https://<your-team-name>.cloudflareaccess.com/cdn-cgi/access/callback`
+     - Replace `<your-team-name>` with your Cloudflare Zero Trust team name
+     - Find your team name at: Cloudflare Dashboard → Zero Trust → Settings → Custom Pages
+5. Click "Create" and save the **Client ID** and **Client Secret**
 
 #### 3. Set Up Cloudflare Access
 
@@ -121,5 +130,5 @@ Run the tracker as a scheduled Worker (requires Docker or Go build in Workers).
 
 **Page not loading:**
 - Check Cloudflare Pages build logs
-- Verify `inventory.json` and `map.html` are in deployment
+- Verify `inventory.json` and `index.html` are in deployment
 - Check browser console for errors
