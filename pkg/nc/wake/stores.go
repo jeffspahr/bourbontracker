@@ -33,10 +33,10 @@ var storeCoordinates = map[string]tracker.Location{
 }
 
 // getStoreLocation returns the coordinates for a store address
-func getStoreLocation(address string) tracker.Location {
+func getStoreLocation(address string) (tracker.Location, bool) {
 	if loc, ok := storeCoordinates[address]; ok {
-		return loc
+		return loc, true
 	}
 	// Return zero coordinates if not found
-	return tracker.Location{Latitude: 0, Longitude: 0}
+	return tracker.Location{Latitude: 0, Longitude: 0}, false
 }
