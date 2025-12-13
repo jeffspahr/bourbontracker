@@ -58,6 +58,77 @@
             font-weight: 600;
         }
 
+        #filters {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            border-bottom: 1px solid #bdc3c7;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        #filters label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        #product-select {
+            flex: 1;
+            min-width: 300px;
+            max-width: 600px;
+            padding: 8px 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        #product-select:hover {
+            border-color: #3498db;
+        }
+
+        #product-select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .filter-btn-select {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn-select:hover {
+            background: #2980b9;
+        }
+
+        .filter-btn-clear {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .filter-btn-clear:hover {
+            background: #7f8c8d;
+        }
+
         #map {
             flex: 1;
         }
@@ -179,6 +250,17 @@
         </div>
     </div>
 
+    <div id="filters">
+        <label for="product-select">Filter by Product:</label>
+        <select id="product-select" multiple size="1">
+            <option value="">All Products (Loading...)</option>
+        </select>
+        <div class="filter-buttons">
+            <button class="filter-btn filter-btn-select" onclick="selectAllProducts()">Select All</button>
+            <button class="filter-btn filter-btn-clear" onclick="clearProductFilter()">Clear Filter</button>
+        </div>
+    </div>
+
     <div id="loading">Loading inventory data...</div>
     <div id="error"></div>
     <div id="map"></div>
@@ -187,6 +269,8 @@
         let map;
         let markers = [];
         let infoWindow;
+        let allInventory = [];
+        let selectedProducts = new Set();
 
         function initMap() {
             // Center on Virginia
@@ -223,6 +307,8 @@
                     return;
                 }
 
+                allInventory = inventory;
+                populateProductSelector(inventory);
                 displayInventory(inventory);
                 updateStats(inventory);
             } catch (error) {
@@ -232,7 +318,83 @@
             }
         }
 
+        function populateProductSelector(inventory) {
+            // Get unique products
+            const products = {};
+            inventory.forEach(item => {
+                const productId = item['bt.productId'];
+                const productName = item['bt.productName'];
+                if (!products[productId]) {
+                    products[productId] = { name: productName, count: 0, quantity: 0 };
+                }
+                products[productId].count++;
+                products[productId].quantity += item['bt.quantity'];
+            });
+
+            // Sort products by total quantity (most popular first)
+            const sortedProducts = Object.entries(products).sort((a, b) =>
+                b[1].quantity - a[1].quantity
+            );
+
+            // Populate dropdown
+            const select = document.getElementById('product-select');
+            select.innerHTML = '<option value="">All Products</option>';
+
+            sortedProducts.forEach(([productId, info]) => {
+                const option = document.createElement('option');
+                option.value = productId;
+                option.textContent = `${info.name} (${info.quantity} bottles at ${info.count} locations)`;
+                select.appendChild(option);
+            });
+
+            // Add change event listener
+            select.addEventListener('change', filterByProduct);
+        }
+
+        function filterByProduct() {
+            const select = document.getElementById('product-select');
+            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+
+            if (selected.length === 0 || selected.includes('')) {
+                // Show all
+                selectedProducts.clear();
+                displayInventory(allInventory);
+                updateStats(allInventory);
+            } else {
+                // Filter by selected products
+                selectedProducts = new Set(selected);
+                const filtered = allInventory.filter(item =>
+                    selectedProducts.has(item['bt.productId'])
+                );
+                displayInventory(filtered);
+                updateStats(filtered);
+            }
+        }
+
+        function selectAllProducts() {
+            const select = document.getElementById('product-select');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value !== '') {
+                    select.options[i].selected = true;
+                }
+            }
+            filterByProduct();
+        }
+
+        function clearProductFilter() {
+            const select = document.getElementById('product-select');
+            select.selectedIndex = 0;
+            for (let i = 0; i < select.options.length; i++) {
+                select.options[i].selected = false;
+            }
+            filterByProduct();
+        }
+
         function displayInventory(inventory) {
+            // Clear existing markers
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
             // Group inventory by store location
             const storeGroups = {};
 
