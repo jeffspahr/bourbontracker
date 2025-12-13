@@ -93,7 +93,15 @@ func main() {
 	// Collect all inventory results
 	var allInventory []PayloadOut
 
+	// Add base delay between all requests to avoid rate limiting
+	baseDelay := 250 * time.Millisecond
+
 	for h := 0; h < len(stores); h++ {
+		// Sleep before each request to be polite to the API
+		if h > 0 {
+			time.Sleep(baseDelay)
+		}
+
 		client := &http.Client{}
 		req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
 		if err != nil {
@@ -120,12 +128,12 @@ func main() {
 
 		// Sometimes the api returns a 403.  We might be querying too fast.
 		if resp.StatusCode != 200 {
-			//TODO add a structured log and print the response code when this happens
-			//fmt.Println(resp.StatusCode)
+			fmt.Fprintf(os.Stderr, "Got HTTP %d for store %s (attempt with %ds backoff)\n", resp.StatusCode, stores[h], waitTime)
 			time.Sleep(time.Duration(waitTime) * time.Second)
 			waitTime = waitTime * 2
-			if waitTime > 256 {
-				//Don't try forever. Give up before hitting 5 min.
+			if waitTime > 512 {
+				// Increased max wait from 256 to 512 seconds
+				fmt.Fprintf(os.Stderr, "Max retries exceeded, giving up\n")
 				os.Exit(1)
 			}
 			h--
@@ -133,8 +141,10 @@ func main() {
 		}
 
 		if resp.StatusCode == 200 {
-			//reset backoff
-			waitTime = 1
+			// Gradually reduce backoff instead of resetting immediately
+			if waitTime > 1 {
+				waitTime = waitTime / 2
+			}
 		}
 
 		//fmt.Printf("%s", body)
