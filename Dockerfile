@@ -21,5 +21,6 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY stores .
 COPY products.json .
+COPY map.html .
 COPY --from=builder /go/src/github.com/jeffspahr/bourbontracker/tracker .
 CMD ["./tracker"]

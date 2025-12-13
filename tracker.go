@@ -90,6 +90,9 @@ func main() {
 		productListString += "," + key
 	}
 
+	// Collect all inventory results
+	var allInventory []PayloadOut
+
 	for h := 0; h < len(stores); h++ {
 		client := &http.Client{}
 		req, err := http.NewRequest("GET", "https://www.abc.virginia.gov/webapi/inventory/mystore", nil)
@@ -154,16 +157,41 @@ func main() {
 			pOut.StoreID = pIn.Products[i].StoreInfo.StoreID
 			pOut.StoreURL = "https://www.abc.virginia.gov/" + pIn.URL
 
-			pOutJSON, err := json.Marshal(pOut)
-			if err != nil {
-				log.Fatal(err)
-			}
-			
+			// Only collect items with quantity > 0
 			if pOut.Quantity > 0 {
-				fmt.Println(string(pOutJSON))
+				// Create a copy to avoid pointer issues
+				item := PayloadOut{
+					Timestamp:   pOut.Timestamp,
+					ProductName: pOut.ProductName,
+					ProductID:   pOut.ProductID,
+					Geo: struct {
+						Latitude  float64 `json:"lat"`
+						Longitude float64 `json:"lon"`
+					}{
+						Latitude:  pOut.Geo.Latitude,
+						Longitude: pOut.Geo.Longitude,
+					},
+					Quantity: pOut.Quantity,
+					StoreID:  pOut.StoreID,
+					StoreURL: pOut.StoreURL,
+				}
+				allInventory = append(allInventory, item)
 			}
 		}
 
 	}
+
+	// Write all inventory to a JSON file
+	inventoryJSON, err := json.MarshalIndent(allInventory, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile("inventory.json", inventoryJSON, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Found %d items in stock across all stores\n", len(allInventory))
 
 }
