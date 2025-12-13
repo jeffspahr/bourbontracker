@@ -46,7 +46,7 @@ go build -o tracker ./cmd/tracker
 # Start local web server
 python3 -m http.server 8000
 
-# Open http://localhost:8000/map.html in your browser
+# Open http://localhost:8000 in your browser
 ```
 
 See [MAP_USAGE.md](MAP_USAGE.md) for detailed setup instructions.
