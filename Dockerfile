@@ -9,12 +9,13 @@ ARG GO_LDFLAGS
 ARG GO_TAGS
 
 WORKDIR /go/src/github.com/jeffspahr/bourbontracker/
-COPY tracker.go .
 COPY go.mod .
+COPY pkg/ ./pkg/
+COPY cmd/ ./cmd/
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 		go build \
 #			-ldflags "$GO_LDFLAGS" -tags="$GO_TAGS" -a \
-			-o tracker
+			-o tracker ./cmd/tracker
 
 FROM alpine:3.23.0
 RUN apk --no-cache add ca-certificates

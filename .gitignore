@@ -15,8 +15,10 @@
 # vendor/
 
 # Tracker binary and output
-tracker
+/tracker
+/tracker-new
 inventory.json
+inventory-test.json
 
 # API keys and secrets
 config.js
