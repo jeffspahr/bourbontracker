@@ -1,4 +1,4 @@
-# VA ABC Bourbon Tracker
+# Bourbon Tracker
 
 [![CI](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml/badge.svg)](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/releases)
@@ -6,16 +6,17 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/LICENSE)
 
-Track rare bourbon availability across Virginia ABC stores with real-time inventory monitoring and interactive map visualization.
+Track rare bourbon availability across multiple states' ABC stores with real-time inventory monitoring and interactive map visualization.
 
 ## Features
 
 - 🗺️ **Interactive Google Maps visualization** - See bourbon inventory on a color-coded map
-- 📊 **47 tracked products** - Rare and allocated bourbons (Pappy, Blanton's, Buffalo Trace, etc.)
-- 🏪 **391 stores** - Complete coverage of Virginia ABC locations
-- ⚡ **Real-time data** - Query live inventory via Virginia ABC API
+- 🌎 **Multi-state support** - Virginia ABC (390 stores) + Wake County NC (15 stores)
+- 📊 **Tracked products** - Rare and allocated bourbons (Pappy, Blanton's, Buffalo Trace, E.H. Taylor, etc.)
+- ⚡ **Real-time data** - Query live inventory via APIs and web scraping
 - 🔒 **Secure** - API keys stored in gitignored config files
 - 🐳 **Containerized** - Docker image with multi-arch support (amd64/arm64)
+- 🔧 **Modular architecture** - Easy to add new states/counties
 
 ## Visualization Options
 
@@ -29,9 +30,14 @@ Interactive map showing bourbon locations and quantities. Perfect for local use 
 cp config.example.js config.js
 # Edit config.js and add your API key
 
-# Run tracker to generate inventory data
-go build tracker.go
+# Build the tracker
+go build -o tracker ./cmd/tracker
+
+# Run tracker to generate inventory data (Virginia ABC only)
 ./tracker
+
+# Run with Wake County NC included
+./tracker -va -wake
 
 # Start local web server
 python3 -m http.server 8000
@@ -81,8 +87,43 @@ Tested on python3.
 ```go run generateStoreList.go```
 
 # Run the Tracker
-## Without building
-```go run tracker.go```
+
+## Command Line Options
+```bash
+# Virginia ABC only (default)
+./tracker
+
+# Virginia ABC + Wake County NC
+./tracker -va -wake
+
+# Wake County NC only
+./tracker -va=false -wake
+
+# Custom output file
+./tracker -output my-inventory.json
+
+# Custom product list (for VA ABC)
+./tracker -products my-products.json
+
+# Custom store list (for VA ABC)
+./tracker -stores my-stores
+```
+
+## Supported Regions
+
+### Virginia ABC (`-va`)
+- **Stores**: 390 across Virginia
+- **Method**: REST API at `abc.virginia.gov`
+- **Product IDs**: Numeric codes (e.g., `018006` for Buffalo Trace)
+- **Coordinates**: Yes (latitude/longitude for each store)
+
+### Wake County NC (`-wake`)
+- **Stores**: 15 across Wake County
+- **Method**: HTML parsing via web scraping
+- **Product Search**: By name (e.g., "Buffalo Trace", "Blanton's")
+- **Coordinates**: No (addresses only)
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details on adding new states/counties.
 
 ## Run using Docker
 ```bash
