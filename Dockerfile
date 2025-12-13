@@ -9,7 +9,7 @@ ARG GO_LDFLAGS
 ARG GO_TAGS
 
 WORKDIR /go/src/github.com/jeffspahr/bourbontracker/
-COPY go.mod .
+COPY go.mod go.sum ./
 COPY pkg/ ./pkg/
 COPY cmd/ ./cmd/
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
