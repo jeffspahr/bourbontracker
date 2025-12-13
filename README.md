@@ -1,5 +1,9 @@
 # Cask Watch
 
+<p align="center">
+  <img src="logo.svg" alt="Cask Watch Logo" width="400"/>
+</p>
+
 [![CI](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml/badge.svg)](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/releases)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/jeffspahr/bourbontracker/pkgs/container/bourbontracker)
