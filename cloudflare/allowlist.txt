@@ -1,0 +1,7 @@
+# Email allowlist for Bourbon Tracker
+# Add one email per line
+# These emails will be allowed to access the application via Google OAuth
+
+user1@gmail.com
+user2@gmail.com
+admin@yourdomain.com

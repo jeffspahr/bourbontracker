@@ -1,0 +1,18 @@
+# Don't deploy these to Cloudflare Pages
+.git/
+.github/
+cmd/
+pkg/
+scripts/
+cloudflare/
+*.go
+go.mod
+go.sum
+tracker
+stores
+products.json
+Dockerfile
+*.md
+!README.md
+screenshots/
+.DS_Store
