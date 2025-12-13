@@ -167,20 +167,20 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 			quantity := extractQuantity(quantityText)
 
 			if quantity > 0 {
+				// Get store coordinates
+				location := getStoreLocation(address)
+
 				// Create inventory item
 				item := tracker.InventoryItem{
 					Timestamp:   now,
 					ProductName: productName,
 					ProductID:   fmt.Sprintf("wake-%s", plu), // Prefix with "wake-" to differentiate from VA codes
-					Location: tracker.Location{
-						Latitude:  0.0, // Wake County doesn't provide coordinates in search results
-						Longitude: 0.0, // TODO: Could geocode addresses if needed
-					},
-					Quantity: quantity,
-					StoreID:  fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
-					StoreURL: "https://wakeabc.com/search-results",
-					State:    "NC",
-					County:   "Wake",
+					Location:    location,
+					Quantity:    quantity,
+					StoreID:     fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
+					StoreURL:    "https://wakeabc.com/search-results",
+					State:       "NC",
+					County:      "Wake",
 				}
 				items = append(items, item)
 			}

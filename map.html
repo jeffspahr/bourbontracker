@@ -227,8 +227,8 @@
 </head>
 <body>
     <div id="header">
-        <h1>Virginia ABC Bourbon Tracker</h1>
-        <p>Real-time inventory of rare bourbon across Virginia ABC stores</p>
+        <h1>Bourbon Tracker</h1>
+        <p>Real-time inventory of rare bourbon across ABC stores (VA + NC)</p>
     </div>
 
     <div id="stats">
@@ -399,12 +399,17 @@
             const storeGroups = {};
 
             inventory.forEach(item => {
-                const key = `${item['geo.location'].lat},${item['geo.location'].lon}`;
+                const lat = item['geo.location'].lat;
+                const lon = item['geo.location'].lon;
+                const key = `${lat},${lon}`;
+
                 if (!storeGroups[key]) {
                     storeGroups[key] = {
-                        lat: item['geo.location'].lat,
-                        lon: item['geo.location'].lon,
+                        lat: lat,
+                        lon: lon,
                         storeId: item['bt.storeId'],
+                        state: item['bt.state'],
+                        county: item['bt.county'],
                         items: []
                     };
                 }
@@ -445,6 +450,11 @@
         function showInfoWindow(marker, store) {
             let content = `<div class="info-window">`;
             content += `<h3>Store #${store.storeId}</h3>`;
+
+            // Show state/county for NC stores
+            if (store.state === 'NC' && store.county) {
+                content += `<p style="color: #7f8c8d; font-size: 14px; margin: 5px 0 15px 0;">${store.county} County, ${store.state}</p>`;
+            }
 
             store.items.forEach(item => {
                 const quantityClass = item['bt.quantity'] > 5 ? 'quantity-high' :
