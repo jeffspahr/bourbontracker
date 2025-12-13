@@ -319,6 +319,61 @@
         let selectedProducts = new Set();
         let selectedRegion = 'all';
 
+        // Region centers for distance calculation
+        const REGION_CENTERS = {
+            'VA': { lat: 37.5407, lng: -78.4364 },
+            'NC-Wake': { lat: 35.7796, lng: -78.6382 }
+        };
+
+        // Calculate distance between two points using Haversine formula
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Detect user's location and set default region
+        async function setDefaultRegionByLocation() {
+            try {
+                // Use ipapi.co free IP geolocation service
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) throw new Error('Geolocation failed');
+
+                const data = await response.json();
+                const userLat = data.latitude;
+                const userLon = data.longitude;
+
+                // Calculate distance to each region
+                let closestRegion = 'all';
+                let minDistance = Infinity;
+
+                for (const [region, center] of Object.entries(REGION_CENTERS)) {
+                    const distance = calculateDistance(userLat, userLon, center.lat, center.lng);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestRegion = region;
+                    }
+                }
+
+                // Set the default region
+                selectedRegion = closestRegion;
+                const select = document.getElementById('region-select');
+                if (select) {
+                    select.value = closestRegion;
+                }
+
+                console.log(`Auto-selected region: ${closestRegion} (${minDistance.toFixed(0)}km away)`);
+            } catch (error) {
+                // Silently fail - keep default 'all' if geolocation doesn't work
+                console.log('Could not detect location, showing all regions:', error.message);
+            }
+        }
+
         function initMap() {
             // Center on Virginia
             map = new google.maps.Map(document.getElementById('map'), {
@@ -356,8 +411,12 @@
 
                 allInventory = inventory;
                 populateProductSelector(inventory);
-                displayInventory(inventory);
-                updateStats(inventory);
+
+                // Set default region based on user's location
+                await setDefaultRegionByLocation();
+
+                // Apply filters (will use the auto-selected region)
+                applyFilters();
             } catch (error) {
                 console.error('Error loading inventory:', error);
                 document.getElementById('loading').style.display = 'none';
