@@ -501,7 +501,7 @@
                     position: { lat: store.lat, lng: store.lon },
                     map: map,
                     title: `Store ${store.storeId} - ${store.items.length} product(s)`,
-                    icon: `http://maps.google.com/mapfiles/ms/icons/${markerColor}-dot.png`
+                    icon: `https://maps.google.com/mapfiles/ms/icons/${markerColor}-dot.png`
                 });
 
                 marker.addListener('click', () => {
@@ -584,7 +584,7 @@
             }
 
             const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap&loading=async`;
             script.async = true;
             script.defer = true;
             script.onerror = function() {
