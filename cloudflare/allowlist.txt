@@ -1,4 +1,4 @@
-# Email allowlist for Bourbon Tracker
+# Email allowlist for Cask Watch
 # Add one email per line
 # These emails will be allowed to access the application via Google OAuth
 
