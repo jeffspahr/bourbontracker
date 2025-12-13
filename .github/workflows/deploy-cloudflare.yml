@@ -20,6 +20,11 @@ jobs:
       - name: Build tracker
         run: go build -o tracker ./cmd/tracker
 
+      - name: Create config.js with API key
+        run: |
+          echo "// Google Maps API configuration" > config.js
+          echo "const GOOGLE_MAPS_API_KEY = '${{ secrets.GOOGLE_MAPS_API_KEY }}';" >> config.js
+
       - name: Run tracker
         run: ./tracker -va -wake
         timeout-minutes: 10
