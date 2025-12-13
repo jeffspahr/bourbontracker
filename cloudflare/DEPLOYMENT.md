@@ -20,7 +20,7 @@ npm install -g wrangler
 wrangler login
 
 # Deploy
-wrangler pages deploy . --project-name=bourbon-tracker
+wrangler pages deploy . --project-name=cask-watch
 ```
 
 #### 2. Configure Google OAuth
@@ -39,7 +39,7 @@ wrangler pages deploy . --project-name=bourbon-tracker
 2. Click "Add an application" → "Self-hosted"
 3. Configure:
    - **Application name**: Cask Watch
-   - **Subdomain**: bourbon-tracker
+   - **Subdomain**: cask-watch
    - **Domain**: your-domain.com
    - **Path**: (leave empty to protect entire site)
 
@@ -64,7 +64,7 @@ wrangler pages deploy . --project-name=bourbon-tracker
 
 #### 4. Access Your Site
 
-Visit `https://bourbon-tracker.your-domain.com`
+Visit `https://cask-watch.your-domain.com`
 
 Users will be prompted to sign in with Google, and only allowlisted emails can access.
 
@@ -91,7 +91,7 @@ Add a workflow to run the tracker and deploy to Cloudflare Pages on schedule.
 ./tracker -va -wake
 
 # Deploy updated inventory
-wrangler pages deploy . --project-name=bourbon-tracker
+wrangler pages deploy . --project-name=cask-watch
 ```
 
 ### Option C: Cloudflare Workers Cron
