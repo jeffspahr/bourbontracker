@@ -330,9 +330,28 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
+
+        // Load Google Maps API dynamically after config is loaded
+        function loadGoogleMaps() {
+            if (typeof GOOGLE_MAPS_API_KEY === 'undefined' || GOOGLE_MAPS_API_KEY === 'YOUR_API_KEY_HERE') {
+                showError('Please copy config.example.js to config.js and add your Google Maps API key');
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                showError('Failed to load Google Maps API. Please check your API key and internet connection.');
+                document.getElementById('loading').style.display = 'none';
+            };
+            document.head.appendChild(script);
+        }
     </script>
 
-    <!-- Replace YOUR_API_KEY_HERE with your actual Google Maps API key -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap" async defer></script>
+    <!-- Load API key configuration -->
+    <script src="config.js" onload="loadGoogleMaps()" onerror="showError('config.js not found. Copy config.example.js to config.js and add your API key.'); document.getElementById('loading').style.display = 'none';"></script>
 </body>
 </html>
