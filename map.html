@@ -112,6 +112,26 @@
             border-color: #3498db;
         }
 
+        #region-select {
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        #region-select:hover {
+            border-color: #3498db;
+        }
+
+        #region-select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
         .filter-buttons {
             display: flex;
             gap: 10px;
@@ -270,6 +290,13 @@
     </div>
 
     <div id="filters">
+        <label for="region-select">Region:</label>
+        <select id="region-select" onchange="filterByRegion()">
+            <option value="all">All Regions</option>
+            <option value="VA">Virginia (VA ABC)</option>
+            <option value="NC-Wake">North Carolina (Wake County)</option>
+        </select>
+
         <label for="product-select">Filter by Product:</label>
         <select id="product-select" multiple size="1">
             <option value="">All Products (Loading...)</option>
@@ -290,6 +317,7 @@
         let infoWindow;
         let allInventory = [];
         let selectedProducts = new Set();
+        let selectedRegion = 'all';
 
         function initMap() {
             // Center on Virginia
@@ -370,24 +398,49 @@
             select.addEventListener('change', filterByProduct);
         }
 
+        function filterByRegion() {
+            const select = document.getElementById('region-select');
+            selectedRegion = select.value;
+            applyFilters();
+        }
+
         function filterByProduct() {
             const select = document.getElementById('product-select');
             const selected = Array.from(select.selectedOptions).map(opt => opt.value);
 
             if (selected.length === 0 || selected.includes('')) {
-                // Show all
                 selectedProducts.clear();
-                displayInventory(allInventory);
-                updateStats(allInventory);
             } else {
-                // Filter by selected products
                 selectedProducts = new Set(selected);
-                const filtered = allInventory.filter(item =>
+            }
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let filtered = allInventory;
+
+            // Filter by region
+            if (selectedRegion !== 'all') {
+                if (selectedRegion === 'NC-Wake') {
+                    filtered = filtered.filter(item =>
+                        item['bt.state'] === 'NC' && item['bt.county'] === 'Wake'
+                    );
+                } else {
+                    filtered = filtered.filter(item =>
+                        item['bt.state'] === selectedRegion
+                    );
+                }
+            }
+
+            // Filter by product
+            if (selectedProducts.size > 0) {
+                filtered = filtered.filter(item =>
                     selectedProducts.has(item['bt.productId'])
                 );
-                displayInventory(filtered);
-                updateStats(filtered);
             }
+
+            displayInventory(filtered);
+            updateStats(filtered);
         }
 
         function selectAllProducts() {

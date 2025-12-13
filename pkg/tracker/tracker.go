@@ -1,6 +1,10 @@
 package tracker
 
-import "time"
+import (
+	"regexp"
+	"strings"
+	"time"
+)
 
 // InventoryItem represents a single bourbon product at a specific store location
 type InventoryItem struct {
@@ -55,4 +59,47 @@ func DefaultConfig() Config {
 		MaxRetries: 5,
 		Timeout:    30 * time.Second,
 	}
+}
+
+// NormalizeProductName standardizes product names across different sources
+// to ensure consistent filtering and display in the UI
+func NormalizeProductName(name string) string {
+	// Trim whitespace
+	name = strings.TrimSpace(name)
+
+	// Common normalizations
+	replacements := map[string]string{
+		"Blantons":           "Blanton's",
+		"EH Taylor":          "E.H. Taylor",
+		"E H Taylor":         "E.H. Taylor",
+		"Stagg Jr":           "Stagg Jr.",
+		"Weller CYPB":        "Weller C.Y.P.B.",
+		"Weller Cypb":        "Weller C.Y.P.B.",
+		"Pappy Van Winkle's": "Pappy Van Winkle",
+		"Van Winkle":         "Pappy Van Winkle",
+	}
+
+	// Apply direct replacements
+	for old, new := range replacements {
+		if strings.Contains(name, old) {
+			name = strings.ReplaceAll(name, old, new)
+		}
+	}
+
+	// Normalize year suffixes (23yr, 23 Year, 23-year → 23 Year)
+	yearPattern := regexp.MustCompile(`(\d+)\s*-?\s*(yr|year|Year)`)
+	name = yearPattern.ReplaceAllString(name, "$1 Year")
+
+	// Normalize bottle sizes - add space before ml/ML
+	sizePattern := regexp.MustCompile(`(\d+)(ml|ML)`)
+	name = sizePattern.ReplaceAllString(name, "$1 $2")
+
+	// Standardize ml casing
+	name = strings.ReplaceAll(name, "ML", "ml")
+
+	// Remove extra whitespace
+	spacePattern := regexp.MustCompile(`\s+`)
+	name = spacePattern.ReplaceAllString(name, " ")
+
+	return strings.TrimSpace(name)
 }
