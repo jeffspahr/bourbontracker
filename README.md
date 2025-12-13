@@ -1,4 +1,4 @@
-# Bourbon Tracker
+# Cask Watch
 
 [![CI](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml/badge.svg)](https://github.com/jeffspahr/bourbontracker/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/releases)
@@ -6,11 +6,11 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/LICENSE)
 
-Track rare bourbon availability across multiple states' ABC stores with real-time inventory monitoring and interactive map visualization.
+Track rare bourbon and spirits availability across multiple states' ABC stores with real-time inventory monitoring and interactive map visualization.
 
 ## Features
 
-- 🗺️ **Interactive Google Maps visualization** - See bourbon inventory on a color-coded map
+- 🗺️ **Interactive Google Maps visualization** - See spirits inventory on a color-coded map
 - 🌎 **Multi-state support** - Virginia ABC (390 stores) + Wake County NC (15 stores)
 - 📊 **Tracked products** - Rare and allocated bourbons (Pappy, Blanton's, Buffalo Trace, E.H. Taylor, etc.)
 - ⚡ **Real-time data** - Query live inventory via APIs and web scraping
@@ -22,7 +22,7 @@ Track rare bourbon availability across multiple states' ABC stores with real-tim
 
 ### Option 1: Google Maps (Simple, Recommended)
 
-Interactive map showing bourbon locations and quantities. Perfect for local use or simple deployments.
+Interactive map showing spirits locations and quantities. Perfect for local use or simple deployments.
 
 **Quick Start:**
 ```bash
@@ -52,7 +52,7 @@ See [MAP_USAGE.md](MAP_USAGE.md) for detailed setup instructions.
 <p align="center">
   <img src="screenshots/map-overview.png" alt="Map Overview" width="800"/>
   <br/>
-  <em>Interactive Google Maps view showing bourbon inventory across Virginia ABC stores</em>
+  <em>Interactive Google Maps view showing spirits inventory across Virginia ABC stores</em>
 </p>
 
 <p align="center">

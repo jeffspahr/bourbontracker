@@ -1,6 +1,6 @@
 # Cloudflare Deployment Guide
 
-Deploy the Bourbon Tracker to Cloudflare Pages with Google OAuth authentication using Cloudflare Access.
+Deploy Cask Watch to Cloudflare Pages with Google OAuth authentication using Cloudflare Access.
 
 ### Prerequisites
 
@@ -38,7 +38,7 @@ wrangler pages deploy . --project-name=bourbon-tracker
 1. Go to Cloudflare Dashboard → Zero Trust → Access → Applications
 2. Click "Add an application" → "Self-hosted"
 3. Configure:
-   - **Application name**: Bourbon Tracker
+   - **Application name**: Cask Watch
    - **Subdomain**: bourbon-tracker
    - **Domain**: your-domain.com
    - **Path**: (leave empty to protect entire site)
