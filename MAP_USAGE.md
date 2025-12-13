@@ -71,14 +71,33 @@ The `-v` flag mounts the current directory so `inventory.json` is written to you
 
 ### Step 4: View the Map
 
-Simply open `map.html` in a web browser. It will automatically load `inventory.json` from the same directory.
+The map needs to be served through a web server (browsers block loading local JSON files for security reasons).
 
-**For local files:**
-- Just double-click `map.html`
-- Or: `open map.html` (macOS) / `start map.html` (Windows)
+**Local Development (Recommended):**
 
-**For web hosting:**
-- Upload both `map.html` and `inventory.json` to the same directory on your web server
+Start a simple web server in the project directory:
+
+```bash
+# Python 3
+python3 -m http.server 8000
+
+# Or Python 2
+python -m SimpleHTTPServer 8000
+
+# Or if you have Node.js
+npx http-server -p 8000
+```
+
+Then open your browser to: **http://localhost:8000/map.html**
+
+**Alternative - Direct File Access:**
+
+Some browsers allow opening local files if you disable security:
+- Chrome: `open -a "Google Chrome" --args --allow-file-access-from-files map.html`
+- Firefox: May work directly without flags
+
+**For Web Hosting:**
+- Upload `map.html`, `config.js`, and `inventory.json` to the same directory on your web server
 - Access via your domain (e.g., https://yourdomain.com/map.html)
 
 ## Automated Updates
@@ -190,9 +209,11 @@ This way Filebeat can still collect logs while the map uses the JSON file.
 - Confirm JSON file is valid (not empty, proper format)
 
 ### Map shows "Failed to load inventory data"
+- **Most common cause**: Opening `map.html` directly as a file (file:// URL) instead of through a web server
+  - **Solution**: Start a local web server: `python3 -m http.server 8000` and access via http://localhost:8000/map.html
 - Ensure `inventory.json` is in the same directory as `map.html`
-- If using web server, check CORS settings
 - Verify the tracker completed successfully
+- Check browser console for CORS or fetch errors
 
 ### No markers appear on map
 - Check if `inventory.json` has any items with quantity > 0
