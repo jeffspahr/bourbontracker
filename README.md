@@ -41,6 +41,26 @@ python3 -m http.server 8000
 
 See [MAP_USAGE.md](MAP_USAGE.md) for detailed setup instructions.
 
+**Screenshots:**
+
+<p align="center">
+  <img src="screenshots/map-overview.png" alt="Map Overview" width="800"/>
+  <br/>
+  <em>Interactive Google Maps view showing bourbon inventory across Virginia ABC stores</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/product-filter.png" alt="Product Filter" width="800"/>
+  <br/>
+  <em>Product filter dropdown with multi-select capability</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/store-detail.png" alt="Store Detail" width="600"/>
+  <br/>
+  <em>Store marker showing product details and quantities</em>
+</p>
+
 ### Option 2: Elasticsearch + Kibana (Advanced)
 
 Full ELK stack deployment for historical data, time-series analysis, and alerting. Ideal for production Kubernetes environments.
