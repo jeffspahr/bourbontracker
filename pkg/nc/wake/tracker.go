@@ -23,6 +23,8 @@ type NCProduct struct {
 	BrandName   string `json:"brand_name"`
 	ListingType string `json:"listing_type"`
 	Size        string `json:"size"`
+	Available   int    `json:"total_available"`
+	Supplier    string `json:"supplier,omitempty"`
 }
 
 // Tracker implements the tracker.Tracker interface for Wake County, NC ABC
@@ -46,11 +48,18 @@ func New(productsFile string) (*Tracker, error) {
 		return nil, fmt.Errorf("failed to parse products file: %w", err)
 	}
 
-	// Create map for quick lookup
+	// Create map for quick lookup, filtering out products with no warehouse inventory
 	products := make(map[string]NCProduct)
+	filtered := 0
 	for _, p := range productList {
-		products[p.NCCode] = p
+		if p.Available > 0 {
+			products[p.NCCode] = p
+		} else {
+			filtered++
+		}
 	}
+
+	log.Printf("Loaded %d products (filtered %d with no warehouse inventory)\n", len(products), filtered)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -93,7 +102,7 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 	results := make(chan result, len(t.products))
 
 	// Limit concurrent requests to avoid overwhelming the server
-	const maxConcurrent = 5
+	const maxConcurrent = 15
 	semaphore := make(chan struct{}, maxConcurrent)
 
 	// Search by NC Code for each product concurrently
@@ -106,8 +115,8 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		go func() {
 			defer func() { <-semaphore }() // release semaphore
 
-			// Rate limiting: 500ms delay per request
-			time.Sleep(500 * time.Millisecond)
+			// Rate limiting: 200ms delay per request
+			time.Sleep(200 * time.Millisecond)
 
 			items, err := t.searchProduct(ncCode, product)
 			if err != nil {
