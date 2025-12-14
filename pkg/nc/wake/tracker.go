@@ -174,7 +174,10 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 					fmt.Fprintf(log.Writer(), "  Run ./scripts/update-wake-geocoding.sh to update store coordinates\n")
 				}
 
-				// Create inventory item
+				// Create inventory item with search URL for this product
+				searchURL := fmt.Sprintf("https://wakeabc.com/search-our-inventory/?productSearch=%s",
+					url.QueryEscape(productName))
+
 				item := tracker.InventoryItem{
 					Timestamp:   now,
 					ProductName: tracker.NormalizeProductName(productName),
@@ -182,7 +185,7 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 					Location:    location,
 					Quantity:    quantity,
 					StoreID:     fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
-					StoreURL:    "https://wakeabc.com/search-our-inventory/",
+					StoreURL:    searchURL,
 					State:       "NC",
 					County:      "Wake",
 				}
