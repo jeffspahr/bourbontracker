@@ -29,9 +29,10 @@ type NCProduct struct {
 
 // Tracker implements the tracker.Tracker interface for Wake County, NC ABC
 type Tracker struct {
-	config       tracker.Config
-	products     map[string]NCProduct // map of NC code to product info
-	client       *http.Client
+	config          tracker.Config
+	products        map[string]NCProduct // map of NC code to product info
+	productsToTrack map[string]bool      // specific products to track (nil = track all)
+	client          *http.Client
 }
 
 // New creates a new Wake County ABC tracker
@@ -59,10 +60,24 @@ func New(productsFile string) (*Tracker, error) {
 	}
 
 	return &Tracker{
-		config:   tracker.DefaultConfig(),
-		products: products,
-		client:   client,
+		config:          tracker.DefaultConfig(),
+		products:        products,
+		productsToTrack: nil, // nil means track all products
+		client:          client,
 	}, nil
+}
+
+// SetProductsToTrack sets specific products to track (by NC Code)
+// If nil or empty, all products will be tracked
+func (t *Tracker) SetProductsToTrack(ncCodes []string) {
+	if len(ncCodes) == 0 {
+		t.productsToTrack = nil
+		return
+	}
+	t.productsToTrack = make(map[string]bool)
+	for _, code := range ncCodes {
+		t.productsToTrack[code] = true
+	}
 }
 
 // Name returns the tracker name
@@ -91,8 +106,23 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		err   error
 	}
 
+	// Count how many products we'll actually search
+	productsToSearch := 0
+	for ncCode := range t.products {
+		if t.productsToTrack == nil || t.productsToTrack[ncCode] {
+			productsToSearch++
+		}
+	}
+
+	if productsToSearch == 0 {
+		fmt.Fprintf(log.Writer(), "  No products need updating (all data is fresh)\n")
+		return []tracker.InventoryItem{}, nil
+	}
+
+	fmt.Fprintf(log.Writer(), "  Searching %d/%d products\n", productsToSearch, len(t.products))
+
 	// Create buffered channel for results
-	results := make(chan result, len(t.products))
+	results := make(chan result, productsToSearch)
 
 	// Limit concurrent requests to avoid overwhelming the server
 	const maxConcurrent = 15
@@ -100,6 +130,11 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 
 	// Search by NC Code for each product concurrently
 	for ncCode, product := range t.products {
+		// Skip if we have a specific product list and this product isn't in it
+		if t.productsToTrack != nil && !t.productsToTrack[ncCode] {
+			continue
+		}
+
 		ncCode := ncCode // capture for goroutine
 		product := product
 
@@ -124,7 +159,7 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 
 	// Collect results
 	var allItems []tracker.InventoryItem
-	for i := 0; i < len(t.products); i++ {
+	for i := 0; i < productsToSearch; i++ {
 		res := <-results
 		if res.err == nil {
 			allItems = append(allItems, res.items...)

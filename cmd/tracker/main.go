@@ -26,6 +26,9 @@ var (
 func main() {
 	flag.Parse()
 
+	// Load existing inventory to determine what needs updating
+	existingInventory := loadExistingInventory(*outputFile)
+
 	var allInventory []tracker.InventoryItem
 	var trackers []tracker.Tracker
 
@@ -43,6 +46,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to initialize Wake County tracker: %v", err)
 		}
+
+		// Determine which products need updating based on age and listing type
+		productsToUpdate := getProductsNeedingUpdate(wakeTracker, existingInventory)
+		wakeTracker.SetProductsToTrack(productsToUpdate)
+
 		trackers = append(trackers, wakeTracker)
 	}
 
@@ -72,8 +80,11 @@ func main() {
 		allInventory = append(allInventory, items...)
 	}
 
+	// Merge new inventory with existing inventory (keep fresh NC data)
+	finalInventory := mergeInventory(existingInventory, allInventory)
+
 	// Write combined inventory to JSON file
-	inventoryJSON, err := json.MarshalIndent(allInventory, "", "  ")
+	inventoryJSON, err := json.MarshalIndent(finalInventory, "", "  ")
 	if err != nil {
 		log.Fatalf("Failed to marshal inventory: %v", err)
 	}
@@ -83,6 +94,105 @@ func main() {
 	}
 
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Printf("Found %d items in stock across all trackers\n", len(allInventory))
+	fmt.Printf("Found %d items in stock across all trackers\n", len(finalInventory))
 	fmt.Fprintf(os.Stderr, "Inventory written to %s\n", *outputFile)
+}
+
+// loadExistingInventory loads the existing inventory file
+func loadExistingInventory(filename string) []tracker.InventoryItem {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		// File doesn't exist or can't be read, return empty inventory
+		fmt.Fprintf(os.Stderr, "No existing inventory found, will create fresh data\n")
+		return []tracker.InventoryItem{}
+	}
+
+	var inventory []tracker.InventoryItem
+	if err := json.Unmarshal(data, &inventory); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse existing inventory: %v\n", err)
+		return []tracker.InventoryItem{}
+	}
+
+	return inventory
+}
+
+// getProductsNeedingUpdate determines which NC products need updating
+func getProductsNeedingUpdate(wakeTracker *wake.Tracker, existingInventory []tracker.InventoryItem) []string {
+	// Build map of product ID -> latest timestamp
+	productTimestamps := make(map[string]time.Time)
+	productListingTypes := make(map[string]string)
+
+	for _, item := range existingInventory {
+		// Only consider NC Wake County items
+		if item.State != "NC" || item.County != "Wake" {
+			continue
+		}
+
+		productID := item.ProductID
+		if ts, exists := productTimestamps[productID]; !exists || item.Timestamp.After(ts) {
+			productTimestamps[productID] = item.Timestamp
+			productListingTypes[productID] = item.ListingType
+		}
+	}
+
+	// Determine which products need updating
+	var productsToUpdate []string
+	now := time.Now()
+
+	// Load NC products to get all product codes
+	allProducts := wakeTracker.ProductCodes()
+
+	for _, ncCode := range allProducts {
+		timestamp, exists := productTimestamps[ncCode]
+		if !exists {
+			// Never tracked before, needs update
+			productsToUpdate = append(productsToUpdate, ncCode)
+			continue
+		}
+
+		listingType := productListingTypes[ncCode]
+		age := now.Sub(timestamp)
+
+		// "Listed" products: update every 24 hours
+		// Other types (Limited, Allocation, Barrel, Christmas): update every hour
+		needsUpdate := false
+		if listingType == "Listed" {
+			needsUpdate = age > 24*time.Hour
+		} else {
+			needsUpdate = age > 1*time.Hour
+		}
+
+		if needsUpdate {
+			productsToUpdate = append(productsToUpdate, ncCode)
+		}
+	}
+
+	return productsToUpdate
+}
+
+// mergeInventory merges new inventory with existing, replacing old NC data with new
+func mergeInventory(existing, new []tracker.InventoryItem) []tracker.InventoryItem {
+	// Create set of product IDs that were updated
+	updatedProducts := make(map[string]bool)
+	for _, item := range new {
+		if item.State == "NC" && item.County == "Wake" {
+			updatedProducts[item.ProductID] = true
+		}
+	}
+
+	// Keep existing items that weren't updated
+	var merged []tracker.InventoryItem
+	for _, item := range existing {
+		// Skip NC items that were updated
+		if item.State == "NC" && item.County == "Wake" && updatedProducts[item.ProductID] {
+			continue
+		}
+		// Keep VA items and NC items that weren't updated
+		merged = append(merged, item)
+	}
+
+	// Add all new items
+	merged = append(merged, new...)
+
+	return merged
 }
