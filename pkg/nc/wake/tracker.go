@@ -48,18 +48,11 @@ func New(productsFile string) (*Tracker, error) {
 		return nil, fmt.Errorf("failed to parse products file: %w", err)
 	}
 
-	// Create map for quick lookup, filtering out products with no warehouse inventory
+	// Create map for quick lookup
 	products := make(map[string]NCProduct)
-	filtered := 0
 	for _, p := range productList {
-		if p.Available > 0 {
-			products[p.NCCode] = p
-		} else {
-			filtered++
-		}
+		products[p.NCCode] = p
 	}
-
-	log.Printf("Loaded %d products (filtered %d with no warehouse inventory)\n", len(products), filtered)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,

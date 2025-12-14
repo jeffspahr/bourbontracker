@@ -30,6 +30,7 @@ var storeCoordinates = map[string]tracker.Location{
 	"6809 Davis Circle Raleigh, NC 27612":                {Latitude: 35.862667, Longitude: -78.7099899},
 	"420 Woodburn Rd. Raleigh, NC 27605":                 {Latitude: 35.7899326, Longitude: -78.6586902},
 	"2645 Appliance Ct. Raleigh, NC 27604":               {Latitude: 35.8125293, Longitude: -78.6018258},
+	"1222 New Bern Ave. Raleigh, NC 27401":               {Latitude: 35.8083489, Longitude: -78.6432},
 }
 
 // getStoreLocation returns the coordinates for a store address
