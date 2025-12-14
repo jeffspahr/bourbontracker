@@ -124,8 +124,8 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 	// Create buffered channel for results
 	results := make(chan result, productsToSearch)
 
-	// Limit concurrent requests to avoid overwhelming the server
-	const maxConcurrent = 15
+	// Limit concurrent requests to avoid overwhelming the server and prevent 429 errors
+	const maxConcurrent = 3
 	semaphore := make(chan struct{}, maxConcurrent)
 
 	// Search by NC Code for each product concurrently
@@ -143,8 +143,8 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		go func() {
 			defer func() { <-semaphore }() // release semaphore
 
-			// Rate limiting: 200ms delay per request
-			time.Sleep(200 * time.Millisecond)
+			// Rate limiting: 1 second delay per request to avoid 429 errors
+			time.Sleep(1000 * time.Millisecond)
 
 			items, err := t.searchProduct(ncCode, product)
 			if err != nil {
