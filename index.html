@@ -90,26 +90,105 @@
             font-size: 14px;
         }
 
-        #product-select {
+        #product-filter-container {
             flex: 1;
             min-width: 300px;
             max-width: 600px;
+            position: relative;
+        }
+
+        #product-search {
+            width: 100%;
             padding: 8px 12px;
             border: 2px solid #bdc3c7;
             border-radius: 4px;
             font-size: 14px;
             background: white;
-            cursor: pointer;
             transition: border-color 0.3s;
         }
 
-        #product-select:hover {
+        #product-search:hover {
             border-color: #3498db;
         }
 
-        #product-select:focus {
+        #product-search:focus {
             outline: none;
             border-color: #3498db;
+        }
+
+        #product-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #3498db;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .product-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .product-option:hover {
+            background: #ecf0f1;
+        }
+
+        .product-option:last-child {
+            border-bottom: none;
+        }
+
+        .product-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .product-option-label {
+            flex: 1;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        #selected-products {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+            min-height: 20px;
+        }
+
+        .product-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .product-chip-remove {
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .product-chip-remove:hover {
+            opacity: 1;
         }
 
         #region-select, #listing-select {
@@ -307,13 +386,15 @@
             <option value="Christmas">Christmas</option>
         </select>
 
-        <label for="product-select">Filter by Product:</label>
-        <select id="product-select" multiple size="1">
-            <option value="">All Products (Loading...)</option>
-        </select>
+        <label for="product-search">Filter by Product:</label>
+        <div id="product-filter-container">
+            <input type="text" id="product-search" placeholder="Type to search products..." autocomplete="off">
+            <div id="product-dropdown"></div>
+            <div id="selected-products"></div>
+        </div>
         <div class="filter-buttons">
-            <button class="filter-btn filter-btn-select" onclick="selectAllProducts()">Select All</button>
-            <button class="filter-btn filter-btn-clear" onclick="clearProductFilter()">Clear Filter</button>
+            <button class="filter-btn filter-btn-select" onclick="selectAllProducts()">Select All (Filtered)</button>
+            <button class="filter-btn filter-btn-clear" onclick="clearProductFilter()">Clear All</button>
         </div>
     </div>
 
@@ -326,6 +407,7 @@
         let markers = [];
         let infoWindow;
         let allInventory = [];
+        let allProducts = {}; // Map of productId -> product info
         let selectedProducts = new Set();
         let selectedRegion = 'all';
         let selectedListing = 'all';
@@ -448,24 +530,107 @@
                 products[productId].quantity += item['bt.quantity'];
             });
 
-            // Sort products by total quantity (most popular first)
-            const sortedProducts = Object.entries(products).sort((a, b) =>
-                b[1].quantity - a[1].quantity
-            );
+            // Store globally
+            allProducts = products;
 
-            // Populate dropdown
-            const select = document.getElementById('product-select');
-            select.innerHTML = '<option value="">All Products</option>';
+            // Set up search input
+            const searchInput = document.getElementById('product-search');
+            searchInput.addEventListener('input', handleProductSearch);
+            searchInput.addEventListener('focus', handleProductSearch);
 
-            sortedProducts.forEach(([productId, info]) => {
-                const option = document.createElement('option');
-                option.value = productId;
-                option.textContent = `${info.name} (${info.quantity} bottles at ${info.count} locations)`;
-                select.appendChild(option);
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#product-filter-container')) {
+                    document.getElementById('product-dropdown').style.display = 'none';
+                }
             });
 
-            // Add change event listener
-            select.addEventListener('change', filterByProduct);
+            // Update placeholder
+            searchInput.placeholder = `Search ${Object.keys(products).length} products...`;
+        }
+
+        function handleProductSearch(e) {
+            const searchText = e.target.value.toLowerCase();
+            const dropdown = document.getElementById('product-dropdown');
+
+            // Filter products based on search text
+            const filtered = Object.entries(allProducts).filter(([productId, info]) => {
+                const searchableText = `${info.name} ${productId}`.toLowerCase();
+                return searchableText.includes(searchText);
+            });
+
+            // Sort by quantity (most popular first)
+            filtered.sort((a, b) => b[1].quantity - a[1].quantity);
+
+            // Show dropdown if there are results
+            if (filtered.length > 0) {
+                dropdown.innerHTML = '';
+                filtered.forEach(([productId, info]) => {
+                    const option = document.createElement('div');
+                    option.className = 'product-option';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = selectedProducts.has(productId);
+                    checkbox.onchange = (e) => {
+                        e.stopPropagation();
+                        toggleProduct(productId);
+                    };
+
+                    const label = document.createElement('span');
+                    label.className = 'product-option-label';
+                    label.textContent = `${info.name} (${info.quantity} bottles at ${info.count} locations)`;
+
+                    option.appendChild(checkbox);
+                    option.appendChild(label);
+                    option.onclick = () => {
+                        checkbox.checked = !checkbox.checked;
+                        toggleProduct(productId);
+                    };
+
+                    dropdown.appendChild(option);
+                });
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        function toggleProduct(productId) {
+            if (selectedProducts.has(productId)) {
+                selectedProducts.delete(productId);
+            } else {
+                selectedProducts.add(productId);
+            }
+            updateSelectedProductsDisplay();
+            applyFilters();
+        }
+
+        function updateSelectedProductsDisplay() {
+            const container = document.getElementById('selected-products');
+            container.innerHTML = '';
+
+            if (selectedProducts.size === 0) {
+                return;
+            }
+
+            selectedProducts.forEach(productId => {
+                const info = allProducts[productId];
+                const chip = document.createElement('div');
+                chip.className = 'product-chip';
+
+                const name = document.createElement('span');
+                name.textContent = info.name;
+
+                const remove = document.createElement('span');
+                remove.className = 'product-chip-remove';
+                remove.textContent = '×';
+                remove.onclick = () => toggleProduct(productId);
+
+                chip.appendChild(name);
+                chip.appendChild(remove);
+                container.appendChild(chip);
+            });
         }
 
         function filterByRegion() {
@@ -477,18 +642,6 @@
         function filterByListing() {
             const select = document.getElementById('listing-select');
             selectedListing = select.value;
-            applyFilters();
-        }
-
-        function filterByProduct() {
-            const select = document.getElementById('product-select');
-            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-
-            if (selected.length === 0 || selected.includes('')) {
-                selectedProducts.clear();
-            } else {
-                selectedProducts = new Set(selected);
-            }
             applyFilters();
         }
 
@@ -521,22 +674,30 @@
         }
 
         function selectAllProducts() {
-            const select = document.getElementById('product-select');
-            for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].value !== '') {
-                    select.options[i].selected = true;
-                }
-            }
-            filterByProduct();
+            const searchText = document.getElementById('product-search').value.toLowerCase();
+
+            // Get filtered products based on current search
+            const filtered = Object.entries(allProducts).filter(([productId, info]) => {
+                const searchableText = `${info.name} ${productId}`.toLowerCase();
+                return searchableText.includes(searchText);
+            });
+
+            // Add all filtered products to selection
+            filtered.forEach(([productId]) => {
+                selectedProducts.add(productId);
+            });
+
+            updateSelectedProductsDisplay();
+            handleProductSearch({ target: document.getElementById('product-search') });
+            applyFilters();
         }
 
         function clearProductFilter() {
-            const select = document.getElementById('product-select');
-            select.selectedIndex = 0;
-            for (let i = 0; i < select.options.length; i++) {
-                select.options[i].selected = false;
-            }
-            filterByProduct();
+            selectedProducts.clear();
+            document.getElementById('product-search').value = '';
+            document.getElementById('product-dropdown').style.display = 'none';
+            updateSelectedProductsDisplay();
+            applyFilters();
         }
 
         function displayInventory(inventory) {
