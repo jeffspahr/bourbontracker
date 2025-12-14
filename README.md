@@ -10,14 +10,18 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/jeffspahr/bourbontracker)](https://github.com/jeffspahr/bourbontracker/blob/main/LICENSE)
 
-Track rare bourbon and spirits availability across multiple states' ABC stores with real-time inventory monitoring and interactive map visualization.
+Track rare bourbon and spirits availability across multiple states' ABC stores with real-time inventory monitoring, smart caching, and interactive map visualization.
+
+> **v2.0.0** - Now tracking **48,850+ items** across Virginia ABC and North Carolina with intelligent caching and listing type filters!
 
 ## Features
 
-- 🗺️ **Interactive Google Maps visualization** - See spirits inventory on a color-coded map
-- 🌎 **Multi-state support** - Virginia ABC (390 stores) + Wake County NC (15 stores)
-- 📊 **Tracked products** - Rare and allocated bourbons (Pappy, Blanton's, Buffalo Trace, E.H. Taylor, etc.)
-- ⚡ **Real-time data** - Query live inventory via APIs and web scraping
+- 🗺️ **Interactive Google Maps visualization** - See spirits inventory on a color-coded map with geocoded locations
+- 🌎 **Multi-state support** - Virginia ABC (390 stores) + North Carolina Wake County (15 stores)
+- 🧠 **Smart caching** - Intelligent request optimization reduces API calls by 80% on scheduled runs
+- 🏷️ **Listing type filters** - Filter NC products by Limited, Allocation, Listed, Barrel, Christmas
+- 📊 **Comprehensive tracking** - 48,850+ items including rare allocations (Pappy, Blanton's, Buffalo Trace, etc.)
+- ⚡ **Optimized performance** - Conservative rate limiting prevents 429 errors
 - 🔒 **Secure** - API keys stored in gitignored config files
 - 🐳 **Containerized** - Docker image with multi-arch support (amd64/arm64)
 - 🔧 **Modular architecture** - Easy to add new states/counties
@@ -119,13 +123,26 @@ Tested on python3.
 - **Stores**: 390 across Virginia
 - **Method**: REST API at `abc.virginia.gov`
 - **Product IDs**: Numeric codes (e.g., `018006` for Buffalo Trace)
+- **Products Tracked**: ~48 curated rare/allocated spirits
 - **Coordinates**: Yes (latitude/longitude for each store)
 
 ### Wake County NC (`-wake`)
 - **Stores**: 15 across Wake County
-- **Method**: HTML parsing via web scraping
-- **Product Search**: By name (e.g., "Buffalo Trace", "Blanton's")
-- **Coordinates**: No (addresses only)
+- **Method**: HTML parsing via web scraping at `wakeabc.com`
+- **Product Search**: NC Codes from state warehouse (e.g., `18006` for Buffalo Trace)
+- **Products Tracked**: All 3,167 products from NC ABC warehouse catalog
+- **Listing Types**: Limited, Allocation, Listed, Barrel, Christmas
+- **Coordinates**: Yes (geocoded latitude/longitude for all 15 stores)
+- **Smart Caching**:
+  - "Listed" products: Update every 24 hours
+  - Limited/Allocation/Barrel/Christmas: Update hourly
+  - Result: 80% reduction in API requests on scheduled runs
+
+### Performance Stats
+- **Total Items**: 48,850+ tracked across both states
+- **Fresh Deployment**: ~36 minutes (full scan of all products)
+- **Scheduled Runs**: ~3-5 minutes (with smart caching)
+- **Rate Limiting**: Conservative (3 concurrent, 1 second delay) to prevent 429 errors
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for details on adding new states/counties.
 
