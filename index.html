@@ -518,7 +518,7 @@
         }
 
         function populateProductSelector(inventory) {
-            // Get unique products
+            // Calculate products from ALL inventory (unfiltered)
             const products = {};
             inventory.forEach(item => {
                 const productId = item['bt.productId'];
@@ -533,28 +533,76 @@
             // Store globally
             allProducts = products;
 
-            // Set up search input
+            // Set up search input (only once)
             const searchInput = document.getElementById('product-search');
-            searchInput.addEventListener('input', handleProductSearch);
-            searchInput.addEventListener('focus', handleProductSearch);
+            if (!searchInput.hasAttribute('data-initialized')) {
+                searchInput.addEventListener('input', handleProductSearch);
+                searchInput.addEventListener('focus', handleProductSearch);
+                searchInput.setAttribute('data-initialized', 'true');
 
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#product-filter-container')) {
-                    document.getElementById('product-dropdown').style.display = 'none';
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#product-filter-container')) {
+                        document.getElementById('product-dropdown').style.display = 'none';
+                    }
+                });
+            }
+
+            // Update product list based on current filters
+            updateProductList();
+        }
+
+        function updateProductList() {
+            // Get filtered inventory based on region and listing type (but NOT product filter)
+            let filtered = allInventory;
+
+            if (selectedRegion !== 'all') {
+                filtered = filtered.filter(item =>
+                    item['bt.state'] === selectedRegion
+                );
+            }
+
+            if (selectedListing !== 'all') {
+                filtered = filtered.filter(item =>
+                    item['bt.listingType'] === selectedListing
+                );
+            }
+
+            // Calculate products from filtered inventory
+            const filteredProducts = {};
+            filtered.forEach(item => {
+                const productId = item['bt.productId'];
+                const productName = item['bt.productName'];
+                if (!filteredProducts[productId]) {
+                    filteredProducts[productId] = { name: productName, count: 0, quantity: 0 };
                 }
+                filteredProducts[productId].count++;
+                filteredProducts[productId].quantity += item['bt.quantity'];
             });
 
+            // Store filtered products globally for search
+            window.filteredProducts = filteredProducts;
+
             // Update placeholder
-            searchInput.placeholder = `Search ${Object.keys(products).length} products...`;
+            const searchInput = document.getElementById('product-search');
+            const productCount = Object.keys(filteredProducts).length;
+            searchInput.placeholder = `Search ${productCount} product${productCount !== 1 ? 's' : ''}...`;
+
+            // Refresh the dropdown if it's open
+            if (document.getElementById('product-dropdown').style.display === 'block') {
+                handleProductSearch({ target: searchInput });
+            }
         }
 
         function handleProductSearch(e) {
             const searchText = e.target.value.toLowerCase();
             const dropdown = document.getElementById('product-dropdown');
 
+            // Use filteredProducts (based on region/listing filters) instead of allProducts
+            const productsToSearch = window.filteredProducts || allProducts;
+
             // Filter products based on search text
-            const filtered = Object.entries(allProducts).filter(([productId, info]) => {
+            const filtered = Object.entries(productsToSearch).filter(([productId, info]) => {
                 const searchableText = `${info.name} ${productId}`.toLowerCase();
                 return searchableText.includes(searchText);
             });
@@ -636,12 +684,14 @@
         function filterByRegion() {
             const select = document.getElementById('region-select');
             selectedRegion = select.value;
+            updateProductList(); // Update available products based on region
             applyFilters();
         }
 
         function filterByListing() {
             const select = document.getElementById('listing-select');
             selectedListing = select.value;
+            updateProductList(); // Update available products based on listing type
             applyFilters();
         }
 
@@ -676,8 +726,11 @@
         function selectAllProducts() {
             const searchText = document.getElementById('product-search').value.toLowerCase();
 
+            // Use filteredProducts (based on region/listing filters)
+            const productsToSearch = window.filteredProducts || allProducts;
+
             // Get filtered products based on current search
-            const filtered = Object.entries(allProducts).filter(([productId, info]) => {
+            const filtered = Object.entries(productsToSearch).filter(([productId, info]) => {
                 const searchableText = `${info.name} ${productId}`.toLowerCase();
                 return searchableText.includes(searchText);
             });
