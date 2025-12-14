@@ -28,6 +28,31 @@ jobs:
       - name: Build tracker
         run: go build -o tracker ./cmd/tracker
 
+      - name: Download previous inventory for caching
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: deploy-cloudflare.yml
+          workflow_conclusion: success
+          name_is_regexp: true
+          name: inventory-.*
+          path: .
+          if_no_artifact_found: warn
+        continue-on-error: true
+
+      - name: Use most recent inventory if multiple found
+        run: |
+          # If multiple inventory files were downloaded, use the most recent
+          if ls inventory-*/inventory.json 1> /dev/null 2>&1; then
+            # Find the most recent inventory directory (highest run number)
+            LATEST=$(ls -d inventory-* | sort -t- -k2 -nr | head -n1)
+            echo "Using cached inventory from $LATEST"
+            cp "$LATEST/inventory.json" inventory.json
+            ls -lh inventory.json
+          else
+            echo "No previous inventory found - will perform full scan"
+          fi
+        continue-on-error: true
+
       - name: Run tracker (VA + Wake County)
         run: ./tracker -va -wake
         timeout-minutes: 60
