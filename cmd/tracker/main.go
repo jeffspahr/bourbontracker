@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	storesFile   = flag.String("stores", "stores", "Path to stores file (VA ABC)")
-	productsFile = flag.String("products", "products.json", "Path to products file")
-	outputFile   = flag.String("output", "inventory.json", "Path to output JSON file")
-	enableVA     = flag.Bool("va", true, "Enable Virginia ABC tracker")
-	enableWake   = flag.Bool("wake", false, "Enable Wake County NC tracker")
+	storesFile     = flag.String("stores", "stores", "Path to stores file (VA ABC)")
+	productsFile   = flag.String("products", "products.json", "Path to products file (VA ABC)")
+	ncProductsFile = flag.String("nc-products", "nc-products.json", "Path to NC products file (Wake County)")
+	outputFile     = flag.String("output", "inventory.json", "Path to output JSON file")
+	enableVA       = flag.Bool("va", true, "Enable Virginia ABC tracker")
+	enableWake     = flag.Bool("wake", false, "Enable Wake County NC tracker")
 )
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	if *enableWake {
-		wakeTracker, err := wake.New()
+		wakeTracker, err := wake.New(*ncProductsFile)
 		if err != nil {
 			log.Fatalf("Failed to initialize Wake County tracker: %v", err)
 		}

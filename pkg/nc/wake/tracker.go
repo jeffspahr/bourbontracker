@@ -1,11 +1,13 @@
 package wake
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,32 +17,39 @@ import (
 	"github.com/jeffspahr/bourbontracker/pkg/tracker"
 )
 
+// NCProduct represents a product from NC ABC warehouse
+type NCProduct struct {
+	NCCode      string `json:"nc_code"`
+	BrandName   string `json:"brand_name"`
+	ListingType string `json:"listing_type"`
+	Size        string `json:"size"`
+}
+
 // Tracker implements the tracker.Tracker interface for Wake County, NC ABC
 type Tracker struct {
 	config       tracker.Config
-	productNames map[string]string // map of product code to name
+	products     map[string]NCProduct // map of NC code to product info
 	client       *http.Client
 }
 
 // New creates a new Wake County ABC tracker
-func New() (*Tracker, error) {
-	// Product names to search for (subset of VA ABC products)
-	// Wake County uses product names, not codes
-	productNames := map[string]string{
-		"blantons":          "Blanton's",
-		"buffalo-trace":     "Buffalo Trace",
-		"pappy-23":          "Pappy Van Winkle 23",
-		"pappy-20":          "Pappy Van Winkle 20",
-		"pappy-15":          "Pappy Van Winkle 15",
-		"weller-12":         "Weller 12",
-		"weller-antique":    "Weller Antique",
-		"weller-full-proof": "Weller Full Proof",
-		"weller-cypb":       "Weller C.Y.P.B",
-		"eagle-rare":        "Eagle Rare",
-		"eh-taylor":         "E.H. Taylor",
-		"stagg-jr":          "Stagg Jr",
-		"george-stagg":      "George T. Stagg",
-		"elmer-lee":         "Elmer T. Lee",
+func New(productsFile string) (*Tracker, error) {
+	// Load NC products from JSON
+	file, err := os.Open(productsFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open products file: %w", err)
+	}
+	defer file.Close()
+
+	var productList []NCProduct
+	if err := json.NewDecoder(file).Decode(&productList); err != nil {
+		return nil, fmt.Errorf("failed to parse products file: %w", err)
+	}
+
+	// Create map for quick lookup
+	products := make(map[string]NCProduct)
+	for _, p := range productList {
+		products[p.NCCode] = p
 	}
 
 	client := &http.Client{
@@ -48,9 +57,9 @@ func New() (*Tracker, error) {
 	}
 
 	return &Tracker{
-		config:       tracker.DefaultConfig(),
-		productNames: productNames,
-		client:       client,
+		config:   tracker.DefaultConfig(),
+		products: products,
+		client:   client,
 	}, nil
 }
 
@@ -61,8 +70,8 @@ func (t *Tracker) Name() string {
 
 // ProductCodes returns the list of product codes
 func (t *Tracker) ProductCodes() []string {
-	codes := make([]string, 0, len(t.productNames))
-	for code := range t.productNames {
+	codes := make([]string, 0, len(t.products))
+	for code := range t.products {
 		codes = append(codes, code)
 	}
 	return codes
@@ -75,31 +84,59 @@ func (t *Tracker) StoreCount() int {
 
 // Track queries Wake County inventory and returns items
 func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
+	type result struct {
+		items []tracker.InventoryItem
+		err   error
+	}
+
+	// Create buffered channel for results
+	results := make(chan result, len(t.products))
+
+	// Limit concurrent requests to avoid overwhelming the server
+	const maxConcurrent = 5
+	semaphore := make(chan struct{}, maxConcurrent)
+
+	// Search by NC Code for each product concurrently
+	for ncCode, product := range t.products {
+		ncCode := ncCode // capture for goroutine
+		product := product
+
+		semaphore <- struct{}{} // acquire semaphore
+
+		go func() {
+			defer func() { <-semaphore }() // release semaphore
+
+			// Rate limiting: 500ms delay per request
+			time.Sleep(500 * time.Millisecond)
+
+			items, err := t.searchProduct(ncCode, product)
+			if err != nil {
+				fmt.Fprintf(log.Writer(), "  ERROR searching %s: %v\n", ncCode, err)
+			} else if len(items) > 0 {
+				fmt.Fprintf(log.Writer(), "  Found %d items for %s (%s)\n", len(items), ncCode, product.BrandName)
+			}
+
+			results <- result{items: items, err: err}
+		}()
+	}
+
+	// Collect results
 	var allItems []tracker.InventoryItem
-
-	for code, productName := range t.productNames {
-		fmt.Fprintf(log.Writer(), "  Searching for: %s\n", productName)
-
-		items, err := t.searchProduct(code, productName)
-		if err != nil {
-			fmt.Fprintf(log.Writer(), "  ERROR searching %s: %v\n", productName, err)
-			continue
+	for i := 0; i < len(t.products); i++ {
+		res := <-results
+		if res.err == nil {
+			allItems = append(allItems, res.items...)
 		}
-
-		allItems = append(allItems, items...)
-
-		// Rate limiting: 500ms delay between searches
-		time.Sleep(500 * time.Millisecond)
 	}
 
 	return allItems, nil
 }
 
-// searchProduct searches for a specific product and parses results
-func (t *Tracker) searchProduct(productCode, productName string) ([]tracker.InventoryItem, error) {
-	// POST form data
+// searchProduct searches for a specific product by NC Code and parses results
+func (t *Tracker) searchProduct(ncCode string, product NCProduct) ([]tracker.InventoryItem, error) {
+	// Try searching by NC Code first
 	formData := url.Values{}
-	formData.Set("productSearch", productName)
+	formData.Set("productSearch", ncCode)
 
 	req, err := http.NewRequest("POST", "https://wakeabc.com/search-results", strings.NewReader(formData.Encode()))
 	if err != nil {
@@ -127,11 +164,11 @@ func (t *Tracker) searchProduct(productCode, productName string) ([]tracker.Inve
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	return t.parseSearchResults(productCode, string(body))
+	return t.parseSearchResults(ncCode, product, string(body))
 }
 
 // parseSearchResults extracts inventory items from HTML
-func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.InventoryItem, error) {
+func (t *Tracker) parseSearchResults(ncCode string, product NCProduct, html string) ([]tracker.InventoryItem, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
@@ -144,10 +181,6 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 	doc.Find("div.wake-product").Each(func(i int, s *goquery.Selection) {
 		// Extract product name
 		productName := strings.TrimSpace(s.Find("h4").Text())
-
-		// Extract PLU (Wake County's product code)
-		pluText := s.Find("small").Text()
-		plu := extractPLU(pluText)
 
 		// Check if out of stock
 		outOfStock := s.Find("p.out-of-stock").Length() > 0
@@ -174,20 +207,22 @@ func (t *Tracker) parseSearchResults(productCode, html string) ([]tracker.Invent
 					fmt.Fprintf(log.Writer(), "  Run ./scripts/update-wake-geocoding.sh to update store coordinates\n")
 				}
 
-				// Create inventory item with search URL for this product
+				// Create search URL with NC Code
 				searchURL := fmt.Sprintf("https://wakeabc.com/search-our-inventory/?productSearch=%s",
-					url.QueryEscape(productName))
+					url.QueryEscape(ncCode))
 
+				// Create inventory item
 				item := tracker.InventoryItem{
 					Timestamp:   now,
 					ProductName: tracker.NormalizeProductName(productName),
-					ProductID:   fmt.Sprintf("wake-%s", plu), // Prefix with "wake-" to differentiate from VA codes
+					ProductID:   ncCode, // Use NC Code as product ID
 					Location:    location,
 					Quantity:    quantity,
 					StoreID:     fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
 					StoreURL:    searchURL,
 					State:       "NC",
 					County:      "Wake",
+					ListingType: product.ListingType, // Add listing type
 				}
 				items = append(items, item)
 			}
