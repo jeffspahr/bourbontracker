@@ -15,8 +15,9 @@ type InventoryItem struct {
 	Quantity    int       `json:"bt.quantity"`
 	StoreID     string    `json:"bt.storeId"`
 	StoreURL    string    `json:"bt.storeurl"`
-	State       string    `json:"bt.state"`   // VA, NC, etc.
-	County      string    `json:"bt.county"`  // For NC counties
+	State       string    `json:"bt.state"`        // VA, NC, etc.
+	County      string    `json:"bt.county"`       // For NC counties
+	ListingType string    `json:"bt.listingType"`  // Listed, Limited, Allocation, Barrel, Christmas
 }
 
 // Location represents geographic coordinates

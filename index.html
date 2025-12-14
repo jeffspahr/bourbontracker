@@ -112,7 +112,7 @@
             border-color: #3498db;
         }
 
-        #region-select {
+        #region-select, #listing-select {
             min-width: 200px;
             padding: 8px 12px;
             border: 2px solid #bdc3c7;
@@ -123,11 +123,11 @@
             transition: border-color 0.3s;
         }
 
-        #region-select:hover {
+        #region-select:hover, #listing-select:hover {
             border-color: #3498db;
         }
 
-        #region-select:focus {
+        #region-select:focus, #listing-select:focus {
             outline: none;
             border-color: #3498db;
         }
@@ -294,7 +294,17 @@
         <select id="region-select" onchange="filterByRegion()">
             <option value="all">All Regions</option>
             <option value="VA">Virginia (VA ABC)</option>
-            <option value="NC-Wake">North Carolina (Wake County)</option>
+            <option value="NC">North Carolina (Wake County)</option>
+        </select>
+
+        <label for="listing-select">Listing Type:</label>
+        <select id="listing-select" onchange="filterByListing()">
+            <option value="all">All Types</option>
+            <option value="Limited">Limited</option>
+            <option value="Allocation">Allocation</option>
+            <option value="Listed">Listed</option>
+            <option value="Barrel">Barrel</option>
+            <option value="Christmas">Christmas</option>
         </select>
 
         <label for="product-select">Filter by Product:</label>
@@ -318,11 +328,12 @@
         let allInventory = [];
         let selectedProducts = new Set();
         let selectedRegion = 'all';
+        let selectedListing = 'all';
 
         // Region centers for distance calculation
         const REGION_CENTERS = {
             'VA': { lat: 37.5407, lng: -78.4364 },
-            'NC-Wake': { lat: 35.7796, lng: -78.6382 }
+            'NC': { lat: 35.7796, lng: -78.6382 }
         };
 
         // Calculate distance between two points using Haversine formula
@@ -463,6 +474,12 @@
             applyFilters();
         }
 
+        function filterByListing() {
+            const select = document.getElementById('listing-select');
+            selectedListing = select.value;
+            applyFilters();
+        }
+
         function filterByProduct() {
             const select = document.getElementById('product-select');
             const selected = Array.from(select.selectedOptions).map(opt => opt.value);
@@ -480,15 +497,16 @@
 
             // Filter by region
             if (selectedRegion !== 'all') {
-                if (selectedRegion === 'NC-Wake') {
-                    filtered = filtered.filter(item =>
-                        item['bt.state'] === 'NC' && item['bt.county'] === 'Wake'
-                    );
-                } else {
-                    filtered = filtered.filter(item =>
-                        item['bt.state'] === selectedRegion
-                    );
-                }
+                filtered = filtered.filter(item =>
+                    item['bt.state'] === selectedRegion
+                );
+            }
+
+            // Filter by listing type
+            if (selectedListing !== 'all') {
+                filtered = filtered.filter(item =>
+                    item['bt.listingType'] === selectedListing
+                );
             }
 
             // Filter by product
