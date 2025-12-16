@@ -92,17 +92,17 @@
 
         #product-filter-container {
             flex: 1;
-            min-width: 300px;
+            min-width: 250px;
             max-width: 600px;
             position: relative;
         }
 
         #product-search {
             width: 100%;
-            padding: 8px 12px;
+            padding: 12px 14px;
             border: 2px solid #bdc3c7;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px;
             background: white;
             transition: border-color 0.3s;
         }
@@ -121,7 +121,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 300px;
+            max-height: 60vh;
             overflow-y: auto;
             background: white;
             border: 2px solid #3498db;
@@ -132,18 +132,58 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
+        .dropdown-header {
+            position: sticky;
+            top: 0;
+            background: #ecf0f1;
+            padding: 8px 12px;
+            border-bottom: 2px solid #bdc3c7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .dropdown-header-text {
+            font-size: 13px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .dropdown-done-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .dropdown-done-btn:active {
+            background: #2980b9;
+        }
+
         .product-option {
-            padding: 10px 12px;
+            padding: 14px 12px;
             cursor: pointer;
             border-bottom: 1px solid #ecf0f1;
             transition: background 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            min-height: 48px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .product-option:hover {
             background: #ecf0f1;
+        }
+
+        .product-option:active {
+            background: #d5dbdb;
         }
 
         .product-option:last-child {
@@ -152,12 +192,17 @@
 
         .product-option input[type="checkbox"] {
             cursor: pointer;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
         .product-option-label {
             flex: 1;
-            font-size: 14px;
+            font-size: 15px;
             color: #2c3e50;
+            line-height: 1.4;
+            pointer-events: none;
         }
 
         #selected-products {
@@ -337,6 +382,101 @@
             font-size: 16px;
             z-index: 1000;
             display: none;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            #header {
+                padding: 12px 15px;
+            }
+
+            #header h1 {
+                font-size: 20px;
+            }
+
+            #header p {
+                font-size: 12px;
+            }
+
+            #header-logo {
+                width: 40px;
+                height: 40px;
+            }
+
+            #stats {
+                flex-wrap: wrap;
+                gap: 15px;
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            #filters {
+                padding: 12px 15px;
+                gap: 12px;
+            }
+
+            #filters label {
+                width: 100%;
+                font-size: 13px;
+            }
+
+            #region-select, #listing-select {
+                width: 100%;
+                min-width: unset;
+                font-size: 15px;
+                padding: 10px 12px;
+            }
+
+            #product-filter-container {
+                width: 100%;
+                min-width: unset;
+                order: 4;
+            }
+
+            .filter-buttons {
+                width: 100%;
+                order: 5;
+            }
+
+            .filter-btn {
+                flex: 1;
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            #product-dropdown {
+                max-height: 50vh;
+            }
+
+            .product-option {
+                padding: 16px 12px;
+            }
+
+            .product-option-label {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #stats {
+                font-size: 12px;
+            }
+
+            .stat {
+                width: calc(50% - 7.5px);
+            }
+
+            #product-dropdown {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                max-height: 70vh;
+                border-radius: 12px 12px 0 0;
+                border: none;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            }
         }
     </style>
 </head>
@@ -540,10 +680,19 @@
                 searchInput.addEventListener('focus', handleProductSearch);
                 searchInput.setAttribute('data-initialized', 'true');
 
-                // Close dropdown when clicking outside
+                // Close dropdown when clicking outside or pressing Escape
                 document.addEventListener('click', (e) => {
-                    if (!e.target.closest('#product-filter-container')) {
-                        document.getElementById('product-dropdown').style.display = 'none';
+                    const dropdown = document.getElementById('product-dropdown');
+                    const container = document.getElementById('product-filter-container');
+
+                    if (!container.contains(e.target) && dropdown.style.display === 'block') {
+                        closeDropdown();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeDropdown();
                     }
                 });
             }
@@ -594,6 +743,10 @@
             }
         }
 
+        function closeDropdown() {
+            document.getElementById('product-dropdown').style.display = 'none';
+        }
+
         function handleProductSearch(e) {
             const searchText = e.target.value.toLowerCase();
             const dropdown = document.getElementById('product-dropdown');
@@ -613,16 +766,41 @@
             // Show dropdown if there are results
             if (filtered.length > 0) {
                 dropdown.innerHTML = '';
+
+                // Add header with done button
+                const header = document.createElement('div');
+                header.className = 'dropdown-header';
+
+                const headerText = document.createElement('span');
+                headerText.className = 'dropdown-header-text';
+                headerText.textContent = `Select products (${selectedProducts.size} selected)`;
+
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'dropdown-done-btn';
+                doneBtn.textContent = 'Done';
+                doneBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    closeDropdown();
+                };
+
+                header.appendChild(headerText);
+                header.appendChild(doneBtn);
+                dropdown.appendChild(header);
+
+                // Add product options
                 filtered.forEach(([productId, info]) => {
                     const option = document.createElement('div');
                     option.className = 'product-option';
+                    option.dataset.productId = productId;
 
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = selectedProducts.has(productId);
-                    checkbox.onchange = (e) => {
+                    checkbox.onclick = (e) => {
                         e.stopPropagation();
-                        toggleProduct(productId);
+                    };
+                    checkbox.onchange = (e) => {
+                        toggleProduct(productId, false);
                     };
 
                     const label = document.createElement('span');
@@ -631,9 +809,10 @@
 
                     option.appendChild(checkbox);
                     option.appendChild(label);
-                    option.onclick = () => {
+                    option.onclick = (e) => {
+                        if (e.target === checkbox) return;
                         checkbox.checked = !checkbox.checked;
-                        toggleProduct(productId);
+                        toggleProduct(productId, false);
                     };
 
                     dropdown.appendChild(option);
@@ -644,13 +823,32 @@
             }
         }
 
-        function toggleProduct(productId) {
+        function toggleProduct(productId, refreshDropdown = true) {
             if (selectedProducts.has(productId)) {
                 selectedProducts.delete(productId);
             } else {
                 selectedProducts.add(productId);
             }
             updateSelectedProductsDisplay();
+
+            // Update the count in the dropdown header if it exists
+            const dropdown = document.getElementById('product-dropdown');
+            const headerText = dropdown.querySelector('.dropdown-header-text');
+            if (headerText) {
+                headerText.textContent = `Select products (${selectedProducts.size} selected)`;
+            }
+
+            // Update checkbox state in the dropdown
+            if (!refreshDropdown) {
+                const option = dropdown.querySelector(`[data-product-id="${productId}"]`);
+                if (option) {
+                    const checkbox = option.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = selectedProducts.has(productId);
+                    }
+                }
+            }
+
             applyFilters();
         }
 
@@ -748,7 +946,7 @@
         function clearProductFilter() {
             selectedProducts.clear();
             document.getElementById('product-search').value = '';
-            document.getElementById('product-dropdown').style.display = 'none';
+            closeDropdown();
             updateSelectedProductsDisplay();
             applyFilters();
         }
