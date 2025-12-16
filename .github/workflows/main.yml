@@ -62,7 +62,7 @@ jobs:
             type=sha,enable={{is_default_branch}}
 
       - name: Build and push Docker images
-        uses: docker/build-push-action@v6.18.0
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
