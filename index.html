@@ -629,11 +629,40 @@
 
         async function loadInventory() {
             try {
-                const response = await fetch('inventory.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Set default region based on user's location first
+                await setDefaultRegionByLocation();
+
+                // Load inventory based on selected region
+                let inventory = [];
+
+                if (selectedRegion === 'all') {
+                    // Load both VA and NC inventories
+                    const [vaResponse, ncResponse] = await Promise.all([
+                        fetch('inventory-va.json'),
+                        fetch('inventory-nc.json')
+                    ]);
+
+                    if (!vaResponse.ok && !ncResponse.ok) {
+                        throw new Error('Failed to load inventory files');
+                    }
+
+                    const vaInventory = vaResponse.ok ? await vaResponse.json() : [];
+                    const ncInventory = ncResponse.ok ? await ncResponse.json() : [];
+
+                    inventory = [...vaInventory, ...ncInventory];
+                } else if (selectedRegion === 'VA') {
+                    const response = await fetch('inventory-va.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    inventory = await response.json();
+                } else if (selectedRegion === 'NC') {
+                    const response = await fetch('inventory-nc.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    inventory = await response.json();
                 }
-                const inventory = await response.json();
 
                 document.getElementById('loading').style.display = 'none';
 
@@ -645,15 +674,12 @@
                 allInventory = inventory;
                 populateProductSelector(inventory);
 
-                // Set default region based on user's location
-                await setDefaultRegionByLocation();
-
-                // Apply filters (will use the auto-selected region)
+                // Apply filters
                 applyFilters();
             } catch (error) {
                 console.error('Error loading inventory:', error);
                 document.getElementById('loading').style.display = 'none';
-                showError('Failed to load inventory data. Make sure inventory.json exists in the same directory as this HTML file.');
+                showError('Failed to load inventory data. Make sure inventory files exist.');
             }
         }
 
@@ -879,11 +905,16 @@
             });
         }
 
-        function filterByRegion() {
+        async function filterByRegion() {
             const select = document.getElementById('region-select');
-            selectedRegion = select.value;
-            updateProductList(); // Update available products based on region
-            applyFilters();
+            const newRegion = select.value;
+
+            // If changing to a different region, reload inventory
+            if (newRegion !== selectedRegion) {
+                selectedRegion = newRegion;
+                document.getElementById('loading').style.display = 'block';
+                await loadInventory();
+            }
         }
 
         function filterByListing() {
