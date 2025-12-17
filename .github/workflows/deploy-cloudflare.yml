@@ -4,6 +4,14 @@ on:
   workflow_dispatch: # Manual trigger
   schedule:
     - cron: '0 */6 * * *' # Every 6 hours
+  push:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+      - 'favicon.svg'
+      - 'logo-icon.svg'
+      - '.github/workflows/deploy-cloudflare.yml'
 
 jobs:
   build-and-deploy:
