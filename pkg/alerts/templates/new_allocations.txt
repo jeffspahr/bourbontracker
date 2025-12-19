@@ -1,0 +1,28 @@
+Cask Watch Alert: New Allocations Found
+========================================
+
+Hi {{.SubscriberID}},
+
+We detected {{.TotalChanges}} new allocation item{{if ne .TotalChanges 1}}s{{end}} matching your preferences:
+
+{{range .Items}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{{.ProductName}}
+
+  📍 Store: {{.StoreID}}
+  📊 Quantity: {{.Quantity}} bottle{{if ne .Quantity 1}}s{{end}}
+  {{if .ListingType}}🏷️ Type: {{.ListingType}}{{end}}
+  🗺️ Location: {{.State}}{{if .County}} - {{.County}} County{{end}}
+
+  🔗 Link: {{.StoreURL}}
+
+{{end}}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+View the full inventory map at:
+https://caskwatch.com
+
+To modify your alert preferences, update your subscription configuration.
+
+Alert generated at {{.Timestamp}}

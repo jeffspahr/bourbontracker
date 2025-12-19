@@ -17,8 +17,14 @@
 # Tracker binary and output
 /tracker
 /tracker-new
+/alerter
 inventory.json
 inventory-test.json
+*.previous
+
+# Alert system
+alert-history.json
+subscriptions.json
 
 # API keys and secrets
 config.js

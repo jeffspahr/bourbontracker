@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "smtp": {
+    "enabled": true,
+    "from_email": "alerts@caskwatch.com",
+    "from_name": "Cask Watch Alerts"
+  },
+  "subscribers": [
+    {
+      "id": "user1",
+      "email": "user1@example.com",
+      "enabled": true,
+      "preferences": {
+        "states": ["NC"],
+        "counties": ["Wake"],
+        "listing_types": ["Allocation"],
+        "products": [],
+        "product_ids": [],
+        "min_quantity": 1,
+        "alert_on": {
+          "new_product_at_store": true,
+          "quantity_increase": false
+        }
+      }
+    },
+    {
+      "id": "user2",
+      "email": "user2@example.com",
+      "enabled": true,
+      "preferences": {
+        "states": ["NC"],
+        "counties": [],
+        "listing_types": ["Allocation"],
+        "products": ["Blanton's"],
+        "product_ids": [],
+        "min_quantity": 1,
+        "alert_on": {
+          "new_product_at_store": true,
+          "quantity_increase": false
+        }
+      }
+    },
+    {
+      "id": "user3-disabled",
+      "email": "user3@example.com",
+      "enabled": false,
+      "preferences": {
+        "states": ["NC"],
+        "counties": [],
+        "listing_types": ["Allocation", "Limited"],
+        "products": ["*"],
+        "product_ids": [],
+        "min_quantity": 1,
+        "alert_on": {
+          "new_product_at_store": true,
+          "quantity_increase": false
+        }
+      }
+    }
+  ]
+}

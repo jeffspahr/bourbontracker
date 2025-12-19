@@ -1,0 +1,32 @@
+[
+  {
+    "@timestamp": "2025-12-19T10:00:00Z",
+    "bt.productName": "Jim Beam White Label",
+    "bt.productId": "12345",
+    "geo.location": {
+      "lat": 35.7796,
+      "lon": -78.6382
+    },
+    "bt.quantity": 50,
+    "bt.storeId": "wake-store-1",
+    "bt.storeurl": "https://wakeabc.com/store/1",
+    "bt.state": "NC",
+    "bt.county": "Wake",
+    "bt.listingType": "Listed"
+  },
+  {
+    "@timestamp": "2025-12-19T10:00:00Z",
+    "bt.productName": "Jack Daniel's Old No. 7",
+    "bt.productId": "67890",
+    "geo.location": {
+      "lat": 35.8796,
+      "lon": -78.7382
+    },
+    "bt.quantity": 30,
+    "bt.storeId": "wake-store-2",
+    "bt.storeurl": "https://wakeabc.com/store/2",
+    "bt.state": "NC",
+    "bt.county": "Wake",
+    "bt.listingType": "Listed"
+  }
+]

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+      color: white;
+      padding: 30px 20px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .content {
+      background: #ffffff;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-top: none;
+    }
+    .intro {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .item {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin: 15px 0;
+      padding: 15px;
+      background: #f9f9f9;
+    }
+    .product-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #8B4513;
+      margin-bottom: 10px;
+    }
+    .store-info {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    .store-info div {
+      margin: 4px 0;
+    }
+    .quantity {
+      color: #2E8B57;
+      font-weight: bold;
+    }
+    .link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #8B4513;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .link:hover {
+      background: #A0522D;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+    .footer a {
+      color: #8B4513;
+      text-decoration: none;
+    }
+    .summary {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #8B4513;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🥃 Cask Watch Alert</h1>
+    <p style="margin: 10px 0 0 0; font-size: 16px;">New Allocations Found</p>
+  </div>
+
+  <div class="content">
+    <p class="intro">Hi {{.SubscriberID}},</p>
+
+    <div class="summary">
+      {{.TotalChanges}} New Allocation Item{{if ne .TotalChanges 1}}s{{end}} Detected
+    </div>
+
+    {{range .Items}}
+    <div class="item">
+      <div class="product-name">{{.ProductName}}</div>
+      <div class="store-info">
+        <div>📍 <strong>Store:</strong> {{.StoreID}}</div>
+        <div>📊 <strong>Quantity:</strong> <span class="quantity">{{.Quantity}} bottle{{if ne .Quantity 1}}s{{end}}</span></div>
+        {{if .ListingType}}<div>🏷️ <strong>Type:</strong> {{.ListingType}}</div>{{end}}
+        <div>🗺️ <strong>Location:</strong> {{.State}}{{if .County}} - {{.County}} County{{end}}</div>
+      </div>
+      <a href="{{.StoreURL}}" class="link">View on Store Website →</a>
+    </div>
+    {{end}}
+
+    <div class="footer">
+      <p>View the full inventory map at <a href="https://caskwatch.com">caskwatch.com</a></p>
+      <p style="margin-top: 15px;">
+        To modify your alert preferences, update your subscription configuration.<br>
+        <small>Alert generated at {{.Timestamp}}</small>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

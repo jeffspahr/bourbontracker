@@ -244,9 +244,12 @@ func (t *Tracker) parseSearchResults(ncCode string, product NCProduct, html stri
 					fmt.Fprintf(log.Writer(), "  Run ./scripts/update-wake-geocoding.sh to update store coordinates\n")
 				}
 
-				// Create search URL with NC Code
-				searchURL := fmt.Sprintf("https://wakeabc.com/search-our-inventory/?productSearch=%s",
-					url.QueryEscape(ncCode))
+				// Extract street address for display (more readable than full address)
+				storeDisplayName := getStoreDisplayName(address)
+
+				// Wake ABC doesn't have individual product or store pages, and their search
+				// uses POST (not linkable). Link to search page where users can search manually.
+				storeURL := "https://wakeabc.com/search-our-inventory/"
 
 				// Create inventory item
 				item := tracker.InventoryItem{
@@ -255,8 +258,8 @@ func (t *Tracker) parseSearchResults(ncCode string, product NCProduct, html stri
 					ProductID:   ncCode, // Use NC Code as product ID
 					Location:    location,
 					Quantity:    quantity,
-					StoreID:     fmt.Sprintf("wake-%s", sanitizeStoreID(address)),
-					StoreURL:    searchURL,
+					StoreID:     storeDisplayName, // Use readable street address
+					StoreURL:    storeURL,
 					State:       "NC",
 					County:      "Wake",
 					ListingType: product.ListingType, // Add listing type
@@ -298,6 +301,26 @@ func parseAddress(htmlAddress string) string {
 	// Remove extra spaces
 	address = strings.Join(strings.Fields(address), " ")
 	return address
+}
+
+// getStoreDisplayName extracts a readable store name from the full address
+// Example: "7200 Sandy Fork Rd. Raleigh, NC 27609" -> "7200 Sandy Fork Rd, Raleigh"
+func getStoreDisplayName(address string) string {
+	// Split by comma to separate street from city/state/zip
+	parts := strings.Split(address, ",")
+	if len(parts) >= 2 {
+		street := strings.TrimSpace(parts[0])
+		city := strings.TrimSpace(parts[1])
+
+		// Remove trailing period from street if present
+		street = strings.TrimSuffix(street, ".")
+
+		// Return "street, city" format
+		return fmt.Sprintf("%s, %s", street, city)
+	}
+
+	// Fallback: return full address with periods removed
+	return strings.ReplaceAll(address, ".", "")
 }
 
 // sanitizeStoreID creates a store ID from address

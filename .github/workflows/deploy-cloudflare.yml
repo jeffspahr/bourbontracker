@@ -54,9 +54,10 @@ jobs:
             # Find the most recent inventory directory (highest run number)
             LATEST=$(ls -d inventory-* | sort -t- -k2 -nr | head -n1)
             echo "Using cached inventory from $LATEST"
-            cp "$LATEST/inventory-va.json" inventory-va.json 2>/dev/null || echo "No VA inventory cached"
-            cp "$LATEST/inventory-nc.json" inventory-nc.json 2>/dev/null || echo "No NC inventory cached"
-            ls -lh inventory-*.json 2>/dev/null || echo "No cached inventory files"
+            # Copy as .previous for alerter comparison
+            cp "$LATEST/inventory-va.json" inventory-va.json.previous 2>/dev/null || echo "No VA inventory cached"
+            cp "$LATEST/inventory-nc.json" inventory-nc.json.previous 2>/dev/null || echo "No NC inventory cached"
+            ls -lh inventory-*.json* 2>/dev/null || echo "No cached inventory files"
           else
             echo "No previous inventory found - will perform full scan"
           fi
@@ -65,6 +66,41 @@ jobs:
       - name: Run tracker (VA + Wake County)
         run: ./tracker -va -wake
         timeout-minutes: 60
+
+      - name: Checkout subscriptions config
+        uses: actions/checkout@v6
+        with:
+          repository: jeffspahr/bourbontracker-subscriptions
+          token: ${{ secrets.SUBSCRIPTIONS_REPO_TOKEN }}
+          path: config
+        continue-on-error: true
+
+      - name: Send allocation alerts
+        if: success()
+        run: |
+          # Only send alerts if we have previous inventory to compare
+          if [ -f inventory-va.json.previous ] || [ -f inventory-nc.json.previous ]; then
+            if [ -f config/subscriptions.json ]; then
+              echo "Detecting changes and sending alerts..."
+              go run ./cmd/alerter \
+                -previous-va inventory-va.json.previous \
+                -previous-nc inventory-nc.json.previous \
+                -current-va inventory-va.json \
+                -current-nc inventory-nc.json \
+                -subscriptions config/subscriptions.json
+            else
+              echo "No subscriptions config found - skipping alerts"
+            fi
+          else
+            echo "No previous inventory found - skipping alerts on first run"
+          fi
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        continue-on-error: true
+        timeout-minutes: 5
 
       - name: Prepare deployment with embedded API key
         run: |
