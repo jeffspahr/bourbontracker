@@ -46,13 +46,13 @@ type AlertOn struct {
 
 // Config represents the top-level subscriptions configuration
 type Config struct {
-	Version     string       `json:"version"`
-	SMTP        SMTPConfig   `json:"smtp"`
-	Subscribers []Subscriber `json:"subscribers"`
+	Version     string        `json:"version"`
+	Mailgun     MailgunConfig `json:"mailgun"`
+	Subscribers []Subscriber  `json:"subscribers"`
 }
 
-// SMTPConfig holds SMTP server configuration
-type SMTPConfig struct {
+// MailgunConfig holds Mailgun API configuration
+type MailgunConfig struct {
 	Enabled   bool   `json:"enabled"`
 	FromEmail string `json:"from_email"`
 	FromName  string `json:"from_name"`

@@ -112,7 +112,7 @@ func main() {
 	}
 
 	// Create mailer
-	mailer, err := alerts.NewMailer(config.SMTP.FromEmail, config.SMTP.FromName)
+	mailer, err := alerts.NewMailer(config.Mailgun.FromEmail, config.Mailgun.FromName)
 	if err != nil {
 		log.Fatalf("Failed to initialize mailer: %v", err)
 	}

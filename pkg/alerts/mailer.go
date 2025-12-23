@@ -2,30 +2,28 @@ package alerts
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
 	"log"
-	"net/smtp"
 	"os"
 	"time"
 
 	"github.com/jeffspahr/bourbontracker/pkg/tracker"
+	"github.com/mailgun/mailgun-go/v4"
 )
 
 //go:embed templates/*.html templates/*.txt
 var templateFS embed.FS
 
-// Mailer handles sending email alerts
+// Mailer handles sending email alerts via Mailgun
 type Mailer struct {
-	smtpHost   string
-	smtpPort   string
-	smtpUser   string
-	smtpPass   string
-	fromEmail  string
-	fromName   string
-	htmlTmpl   *template.Template
-	textTmpl   *template.Template
+	mg        *mailgun.MailgunImpl
+	fromEmail string
+	fromName  string
+	htmlTmpl  *template.Template
+	textTmpl  *template.Template
 }
 
 // EmailData represents the data passed to email templates
@@ -36,17 +34,18 @@ type EmailData struct {
 	Timestamp    string
 }
 
-// NewMailer creates a new Mailer instance
+// NewMailer creates a new Mailer instance using Mailgun
 func NewMailer(fromEmail, fromName string) (*Mailer, error) {
-	// Load SMTP config from environment
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-	smtpUser := os.Getenv("SMTP_USERNAME")
-	smtpPass := os.Getenv("SMTP_PASSWORD")
+	// Load Mailgun config from environment
+	mailgunDomain := os.Getenv("MAILGUN_DOMAIN")
+	mailgunAPIKey := os.Getenv("MAILGUN_API_KEY")
 
-	if smtpHost == "" || smtpPort == "" {
-		return nil, fmt.Errorf("SMTP configuration missing (SMTP_HOST and SMTP_PORT required)")
+	if mailgunDomain == "" || mailgunAPIKey == "" {
+		return nil, fmt.Errorf("Mailgun configuration missing (MAILGUN_DOMAIN and MAILGUN_API_KEY required)")
 	}
+
+	// Initialize Mailgun client
+	mg := mailgun.NewMailgun(mailgunDomain, mailgunAPIKey)
 
 	// Load email templates
 	htmlTmpl, err := template.ParseFS(templateFS, "templates/new_allocations.html")
@@ -59,19 +58,13 @@ func NewMailer(fromEmail, fromName string) (*Mailer, error) {
 		return nil, fmt.Errorf("failed to load text template: %w", err)
 	}
 
-	// Use authenticated user as sender if fromEmail not specified
-	if fromEmail == "" && smtpUser != "" {
-		fromEmail = smtpUser
-	}
+	// Use default sender if fromEmail not specified
 	if fromEmail == "" {
-		fromEmail = "alerts@caskwatch.com"
+		fromEmail = fmt.Sprintf("postmaster@%s", mailgunDomain)
 	}
 
 	return &Mailer{
-		smtpHost:  smtpHost,
-		smtpPort:  smtpPort,
-		smtpUser:  smtpUser,
-		smtpPass:  smtpPass,
+		mg:        mg,
 		fromEmail: fromEmail,
 		fromName:  fromName,
 		htmlTmpl:  htmlTmpl,
@@ -79,7 +72,7 @@ func NewMailer(fromEmail, fromName string) (*Mailer, error) {
 	}, nil
 }
 
-// SendAlert sends an alert email to a subscriber
+// SendAlert sends an alert email to a subscriber via Mailgun
 func (m *Mailer) SendAlert(subscriber Subscriber, items []tracker.InventoryItem) error {
 	if len(items) == 0 {
 		return nil // Nothing to send
@@ -105,14 +98,12 @@ func (m *Mailer) SendAlert(subscriber Subscriber, items []tracker.InventoryItem)
 		return fmt.Errorf("failed to render text template: %w", err)
 	}
 
-	// Build email message with multipart MIME (HTML + text fallback)
+	// Build email subject
 	subject := fmt.Sprintf("Cask Watch Alert: %d New Allocation Item%s",
 		len(items), pluralize(len(items)))
 
-	msg := m.buildMIMEMessage(subscriber.Email, subject, htmlBody.String(), textBody.String())
-
-	// Send via SMTP
-	if err := m.send(subscriber.Email, msg); err != nil {
+	// Send via Mailgun
+	if err := m.send(subscriber.Email, subject, htmlBody.String(), textBody.String()); err != nil {
 		return fmt.Errorf("failed to send email to %s: %w", subscriber.Email, err)
 	}
 
@@ -139,9 +130,10 @@ func (m *Mailer) SendAlertBatch(subscribers []Subscriber, itemsPerSubscriber map
 
 		sentCount++
 
-		// Rate limiting: 1 second delay between emails to avoid SMTP throttling
+		// Rate limiting: small delay between emails to respect Mailgun limits
+		// Mailgun sandbox: 300 emails/day, production varies by plan
 		if sentCount < len(subscribers) {
-			time.Sleep(1 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
@@ -154,61 +146,28 @@ func (m *Mailer) SendAlertBatch(subscribers []Subscriber, itemsPerSubscriber map
 	return nil
 }
 
-// buildMIMEMessage constructs a multipart MIME message with HTML and text alternatives
-func (m *Mailer) buildMIMEMessage(to, subject, htmlBody, textBody string) []byte {
-	boundary := "boundary-caskwatch-alert"
-
+// send sends an email via Mailgun API
+func (m *Mailer) send(to, subject, htmlBody, textBody string) error {
+	// Build from address with name if provided
 	from := m.fromEmail
 	if m.fromName != "" {
 		from = fmt.Sprintf("%s <%s>", m.fromName, m.fromEmail)
 	}
 
-	headers := fmt.Sprintf(
-		"From: %s\r\n"+
-			"To: %s\r\n"+
-			"Subject: %s\r\n"+
-			"MIME-Version: 1.0\r\n"+
-			"Content-Type: multipart/alternative; boundary=\"%s\"\r\n"+
-			"\r\n",
-		from, to, subject, boundary,
-	)
+	// Create Mailgun message with both HTML and text parts
+	message := m.mg.NewMessage(from, subject, textBody, to)
+	message.SetHtml(htmlBody)
 
-	textPart := fmt.Sprintf(
-		"--%s\r\n"+
-			"Content-Type: text/plain; charset=UTF-8\r\n"+
-			"\r\n"+
-			"%s\r\n"+
-			"\r\n",
-		boundary, textBody,
-	)
+	// Send with 30 second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
 
-	htmlPart := fmt.Sprintf(
-		"--%s\r\n"+
-			"Content-Type: text/html; charset=UTF-8\r\n"+
-			"\r\n"+
-			"%s\r\n"+
-			"\r\n",
-		boundary, htmlBody,
-	)
-
-	footer := fmt.Sprintf("--%s--\r\n", boundary)
-
-	return []byte(headers + textPart + htmlPart + footer)
-}
-
-// send sends an email via SMTP
-func (m *Mailer) send(to string, msg []byte) error {
-	addr := m.smtpHost + ":" + m.smtpPort
-
-	var auth smtp.Auth
-	if m.smtpUser != "" && m.smtpPass != "" {
-		auth = smtp.PlainAuth("", m.smtpUser, m.smtpPass, m.smtpHost)
-	}
-
-	if err := smtp.SendMail(addr, auth, m.fromEmail, []string{to}, msg); err != nil {
+	_, id, err := m.mg.Send(ctx, message)
+	if err != nil {
 		return err
 	}
 
+	log.Printf("Mailgun message sent with ID: %s", id)
 	return nil
 }
 
