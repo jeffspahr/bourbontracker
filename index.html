@@ -595,12 +595,22 @@
 
                 // Set the default region
                 selectedRegion = closestRegion;
-                const select = document.getElementById('region-select');
-                if (select) {
-                    select.value = closestRegion;
+                const regionSelect = document.getElementById('region-select');
+                if (regionSelect) {
+                    regionSelect.value = closestRegion;
                 }
 
-                console.log(`Auto-selected region: ${closestRegion} (${minDistance.toFixed(0)}km away)`);
+                // Auto-select "Allocation" filter for NC users
+                if (closestRegion === 'NC') {
+                    selectedListing = 'Allocation';
+                    const listingSelect = document.getElementById('listing-select');
+                    if (listingSelect) {
+                        listingSelect.value = 'Allocation';
+                    }
+                    console.log(`Auto-selected region: ${closestRegion} with Allocation filter (${minDistance.toFixed(0)}km away)`);
+                } else {
+                    console.log(`Auto-selected region: ${closestRegion} (${minDistance.toFixed(0)}km away)`);
+                }
             } catch (error) {
                 // Silently fail - keep default 'all' if geolocation doesn't work
                 console.log('Could not detect location, showing all regions:', error.message);
