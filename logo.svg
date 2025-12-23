@@ -1,46 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
-  <!-- Background circle -->
-  <circle cx="200" cy="200" r="190" fill="#2c3e50" stroke="#34495e" stroke-width="4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <!-- Full logo with text -->
+  <defs>
+    <linearGradient id="bourbonFull" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B4513;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glassShineFull" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFF;stop-opacity:0.4" />
+      <stop offset="50%" style="stop-color:#FFF;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#FFF;stop-opacity:0.3" />
+    </linearGradient>
+    <radialGradient id="bgFull">
+      <stop offset="0%" style="stop-color:#2d3436;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+    </radialGradient>
+  </defs>
 
-  <!-- Barrel/Cask shape -->
-  <g transform="translate(200, 180)">
-    <!-- Barrel body -->
-    <path d="M -60 -80 Q -75 -40, -75 0 Q -75 40, -60 80 L 60 80 Q 75 40, 75 0 Q 75 -40, 60 -80 Z"
-          fill="#8b4513" stroke="#654321" stroke-width="3"/>
+  <!-- Background -->
+  <rect width="500" height="500" fill="url(#bgFull)" rx="20"/>
 
-    <!-- Barrel hoops (metal bands) -->
-    <ellipse cx="0" cy="-60" rx="70" ry="8" fill="#7f8c8d" opacity="0.9"/>
-    <ellipse cx="0" cy="0" rx="75" ry="9" fill="#95a5a6" opacity="0.9"/>
-    <ellipse cx="0" cy="60" rx="70" ry="8" fill="#7f8c8d" opacity="0.9"/>
+  <!-- Bourbon glass -->
+  <g transform="translate(250, 200)">
+    <!-- Glass outline -->
+    <path d="M -50 -45 L -56 45 Q -56 54, -46 54 L 46 54 Q 56 54, 56 45 L 50 -45 Z"
+          fill="none" stroke="#95a5a6" stroke-width="4" opacity="0.5"/>
 
-    <!-- Wood grain lines -->
-    <line x1="-50" y1="-80" x2="-50" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
-    <line x1="-30" y1="-80" x2="-30" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
-    <line x1="-10" y1="-80" x2="-10" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
-    <line x1="10" y1="-80" x2="10" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
-    <line x1="30" y1="-80" x2="30" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
-    <line x1="50" y1="-80" x2="50" y2="80" stroke="#654321" stroke-width="1.5" opacity="0.4"/>
+    <!-- Bourbon liquid -->
+    <path d="M -48 -20 L -53 40 Q -53 50, -44 50 L 44 50 Q 53 50, 53 40 L 48 -20 Z"
+          fill="url(#bourbonFull)"/>
 
-    <!-- Barrel tap/spigot -->
-    <circle cx="0" cy="0" r="12" fill="#34495e"/>
-    <rect x="-2" y="-5" width="20" height="10" rx="2" fill="#34495e"/>
-    <rect x="15" y="-3" width="8" height="6" rx="1" fill="#7f8c8d"/>
+    <!-- Glass shine -->
+    <path d="M -45 -16 L -49 38 Q -49 46, -42 46 L -25 46 L -21 -16 Z"
+          fill="url(#glassShineFull)"/>
+
+    <!-- Ice cubes -->
+    <rect x="-20" y="5" width="24" height="24" rx="2" fill="#E8F4F8" opacity="0.7" transform="rotate(-15 -8 17)"/>
+    <rect x="-18" y="7" width="10" height="10" rx="1" fill="#FFF" opacity="0.5" transform="rotate(-15 -13 12)"/>
+
+    <rect x="8" y="-8" width="20" height="20" rx="2" fill="#E8F4F8" opacity="0.7" transform="rotate(10 18 2)"/>
+    <rect x="10" y="-6" width="8" height="8" rx="1" fill="#FFF" opacity="0.5" transform="rotate(10 14 -2)"/>
+
+    <!-- Glass base -->
+    <ellipse cx="0" cy="54" rx="50" ry="4" fill="#FFF" opacity="0.15"/>
   </g>
 
-  <!-- Watch/clock element (integrated into top right) -->
-  <g transform="translate(280, 120)">
-    <circle cx="0" cy="0" r="28" fill="#ecf0f1" stroke="#34495e" stroke-width="3"/>
-    <!-- Clock hands -->
-    <line x1="0" y1="0" x2="0" y2="-15" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="0" y1="0" x2="10" y2="5" stroke="#34495e" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="3" fill="#e74c3c"/>
+  <!-- Location pin badge -->
+  <g transform="translate(360, 140)">
+    <circle cx="0" cy="0" r="32" fill="#D4AF37"/>
+    <circle cx="0" cy="0" r="28" fill="#1a1a2e"/>
+    <circle cx="0" cy="0" r="13" fill="#D4AF37"/>
+    <path d="M 0 32 L -10 19 L 10 19 Z" fill="#D4AF37"/>
+    <circle cx="0" cy="0" r="5" fill="#1a1a2e"/>
   </g>
 
-  <!-- Text: CASK WATCH -->
-  <text x="200" y="320" font-family="Arial, sans-serif" font-size="42" font-weight="bold"
-        text-anchor="middle" fill="#ecf0f1" letter-spacing="2">CASK WATCH</text>
+  <!-- Brand text -->
+  <text x="250" y="330" font-family="'Helvetica Neue', Arial, sans-serif" font-size="58"
+        font-weight="700" text-anchor="middle" fill="#D4AF37" letter-spacing="3">
+    CASK WATCH
+  </text>
+
+  <!-- Underline accent -->
+  <line x1="120" y1="345" x2="380" y2="345" stroke="#D4AF37" stroke-width="3" opacity="0.6"/>
 
   <!-- Subtitle -->
-  <text x="200" y="350" font-family="Arial, sans-serif" font-size="16"
-        text-anchor="middle" fill="#95a5a6" letter-spacing="1">RARE SPIRITS TRACKER</text>
+  <text x="250" y="380" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20"
+        font-weight="300" text-anchor="middle" fill="#95a5a6" letter-spacing="4">
+    RARE SPIRITS TRACKER
+  </text>
+
+  <!-- Decorative elements -->
+  <circle cx="100" cy="370" r="2" fill="#D4AF37" opacity="0.6"/>
+  <circle cx="400" cy="370" r="2" fill="#D4AF37" opacity="0.6"/>
 </svg>

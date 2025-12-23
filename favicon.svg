@@ -1,22 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Simplified favicon optimized for small sizes -->
-  <circle cx="50" cy="50" r="48" fill="#2c3e50"/>
+  <!-- Modern, clean favicon - bourbon glass with location pin -->
+  <defs>
+    <linearGradient id="bourbonGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B4513;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFF;stop-opacity:0.3" />
+      <stop offset="50%" style="stop-color:#FFF;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#FFF;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
 
-  <!-- Barrel -->
-  <path d="M 32 30 Q 28 40, 28 50 Q 28 60, 32 70 L 68 70 Q 72 60, 72 50 Q 72 40, 68 30 Z"
-        fill="#8b4513" stroke="#654321" stroke-width="2"/>
+  <!-- Background -->
+  <circle cx="50" cy="50" r="48" fill="#1a1a2e"/>
 
-  <!-- Barrel hoops -->
-  <ellipse cx="50" cy="40" rx="20" ry="3" fill="#95a5a6"/>
-  <ellipse cx="50" cy="50" rx="22" ry="3" fill="#95a5a6"/>
-  <ellipse cx="50" cy="60" rx="20" ry="3" fill="#95a5a6"/>
+  <!-- Bourbon glass (rocks glass) -->
+  <path d="M 30 35 L 28 65 Q 28 70, 33 70 L 57 70 Q 62 70, 62 65 L 60 35 Z"
+        fill="url(#bourbonGradient)" opacity="0.9"/>
 
-  <!-- Barrel tap -->
-  <circle cx="50" cy="50" r="4" fill="#34495e"/>
-  <rect x="50" y="48" width="8" height="4" rx="1" fill="#7f8c8d"/>
+  <!-- Glass highlight -->
+  <path d="M 32 37 L 31 63 Q 31 66, 34 66 L 40 66 L 41 37 Z"
+        fill="url(#glassGradient)"/>
 
-  <!-- Watch element (simplified) -->
-  <circle cx="72" cy="28" r="10" fill="#ecf0f1" stroke="#34495e" stroke-width="1.5"/>
-  <line x1="72" y1="28" x2="72" y2="22" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="72" cy="28" r="1.5" fill="#e74c3c"/>
+  <!-- Ice cube -->
+  <rect x="40" y="45" width="12" height="12" rx="1" fill="#E8F4F8" opacity="0.7"/>
+  <rect x="41" y="46" width="5" height="5" rx="0.5" fill="#FFF" opacity="0.5"/>
+
+  <!-- Location pin (watch/tracking element) -->
+  <circle cx="70" cy="30" r="12" fill="#D4AF37" stroke="#1a1a2e" stroke-width="2"/>
+  <circle cx="70" cy="30" r="5" fill="#1a1a2e"/>
+  <path d="M 70 42 L 65 36 L 75 36 Z" fill="#D4AF37"/>
 </svg>
