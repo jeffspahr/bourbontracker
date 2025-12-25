@@ -37,7 +37,7 @@ jobs:
         run: go build -o tracker ./cmd/tracker
 
       - name: Download previous inventory for caching
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v12
         with:
           workflow: deploy-cloudflare.yml
           workflow_conclusion: success
