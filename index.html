@@ -21,6 +21,10 @@
             flex-direction: column;
         }
 
+        body.debug-layout #filters * {
+            outline: 1px dashed rgba(231, 76, 60, 0.6);
+        }
+
         #header {
             background: #2c3e50;
             color: white;
@@ -1199,6 +1203,13 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
+
+        (function initDebugLayout() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('debug') === '1') {
+                document.body.classList.add('debug-layout');
+            }
+        })();
 
         // Load Google Maps API dynamically after config is loaded
         function loadGoogleMaps() {
