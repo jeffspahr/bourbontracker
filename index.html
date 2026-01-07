@@ -103,6 +103,8 @@
             min-width: 250px;
             max-width: 600px;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         #product-search {
@@ -222,6 +224,12 @@
             gap: 6px;
             margin-top: 8px;
             min-height: 20px;
+        }
+
+        #selected-products:empty {
+            display: none;
+            margin-top: 0;
+            min-height: 0;
         }
 
         .product-chip {
