@@ -2,8 +2,6 @@ name: Deploy to Cloudflare Pages
 
 on:
   workflow_dispatch: # Manual trigger
-  schedule:
-    - cron: '0 */6 * * *' # Every 6 hours
   push:
     branches:
       - main
@@ -20,85 +18,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.25'
-
-      # NC scraper temporarily disabled - website structure changed
-      # - name: Build NC scraper
-      #   run: go build -o nc-scraper ./cmd/nc-scraper
-      #
-      # - name: Scrape NC product list
-      #   run: ./nc-scraper -output nc-products.json
-      #   timeout-minutes: 5
-
-      - name: Build tracker
-        run: go build -o tracker ./cmd/tracker
-
-      - name: Download previous inventory for caching
+      - name: Download latest inventory artifacts
         uses: dawidd6/action-download-artifact@v12
         with:
-          workflow: deploy-cloudflare.yml
+          workflow: inventory-refresh.yml
           workflow_conclusion: success
           name_is_regexp: true
           name: inventory-.*
           path: .
-          if_no_artifact_found: warn
-        continue-on-error: true
 
-      - name: Use most recent inventory if multiple found
+      - name: Use most recent inventory artifact
         run: |
-          # If multiple inventory files were downloaded, use the most recent
           if ls inventory-*/inventory-*.json 1> /dev/null 2>&1; then
-            # Find the most recent inventory directory (highest run number)
             LATEST=$(ls -d inventory-* | sort -t- -k2 -nr | head -n1)
-            echo "Using cached inventory from $LATEST"
-            # Copy as .previous for alerter comparison
-            cp "$LATEST/inventory-va.json" inventory-va.json.previous 2>/dev/null || echo "No VA inventory cached"
-            cp "$LATEST/inventory-nc.json" inventory-nc.json.previous 2>/dev/null || echo "No NC inventory cached"
-            ls -lh inventory-*.json* 2>/dev/null || echo "No cached inventory files"
+            echo "Using inventory from $LATEST"
+            cp "$LATEST/inventory-va.json" inventory-va.json
+            cp "$LATEST/inventory-nc.json" inventory-nc.json
+            ls -lh inventory-*.json
           else
-            echo "No previous inventory found - will perform full scan"
+            echo "No inventory artifacts found. Run the inventory refresh workflow first."
+            exit 1
           fi
-        continue-on-error: true
-
-      - name: Run tracker (VA + Wake County)
-        run: ./tracker -va -wake
-        timeout-minutes: 60
-
-      - name: Checkout subscriptions config
-        uses: actions/checkout@v6
-        with:
-          repository: jeffspahr/bourbontracker-subscriptions
-          token: ${{ secrets.SUBSCRIPTIONS_REPO_TOKEN }}
-          path: config
-        continue-on-error: true
-
-      - name: Send allocation alerts
-        if: success()
-        run: |
-          # Only send alerts if we have previous inventory to compare
-          if [ -f inventory-va.json.previous ] || [ -f inventory-nc.json.previous ]; then
-            if [ -f config/subscriptions.json ]; then
-              echo "Detecting changes and sending alerts..."
-              go run ./cmd/alerter \
-                -previous-va inventory-va.json.previous \
-                -previous-nc inventory-nc.json.previous \
-                -current-va inventory-va.json \
-                -current-nc inventory-nc.json \
-                -subscriptions config/subscriptions.json
-            else
-              echo "No subscriptions config found - skipping alerts"
-            fi
-          else
-            echo "No previous inventory found - skipping alerts on first run"
-          fi
-        env:
-          MAILGUN_DOMAIN: ${{ secrets.MAILGUN_DOMAIN }}
-          MAILGUN_API_KEY: ${{ secrets.MAILGUN_API_KEY }}
-        continue-on-error: true
-        timeout-minutes: 5
 
       - name: Prepare deployment with embedded API key
         run: |
@@ -118,12 +58,3 @@ jobs:
           projectName: cask-watch
           directory: deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload inventory artifacts
-        uses: actions/upload-artifact@v6
-        with:
-          name: inventory-${{ github.run_number }}
-          path: |
-            inventory-va.json
-            inventory-nc.json
-          retention-days: 7
