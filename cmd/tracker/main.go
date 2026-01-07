@@ -24,6 +24,12 @@ var (
 	enableWake     = flag.Bool("wake", false, "Enable Wake County NC tracker")
 )
 
+type inventoryOutput struct {
+	label string
+	path  string
+	items []tracker.InventoryItem
+}
+
 func main() {
 	flag.Parse()
 
@@ -54,17 +60,13 @@ func main() {
 
 		vaInventory = items
 
-		// Write VA inventory
-		inventoryJSON, err := json.MarshalIndent(vaInventory, "", "  ")
-		if err != nil {
-			log.Fatalf("Failed to marshal VA inventory: %v", err)
-		}
-
-		if err := ioutil.WriteFile(*outputVAFile, inventoryJSON, 0644); err != nil {
+		if err := writeInventory(inventoryOutput{
+			label: "VA",
+			path:  *outputVAFile,
+			items: vaInventory,
+		}); err != nil {
 			log.Fatalf("Failed to write VA inventory file: %v", err)
 		}
-
-		fmt.Fprintf(os.Stderr, "  Written to %s\n", *outputVAFile)
 	}
 
 	// Run Wake County tracker
@@ -101,17 +103,13 @@ func main() {
 			ncInventory = mergeInventory(existingNCInventory, items)
 		}
 
-		// Write NC inventory
-		inventoryJSON, err := json.MarshalIndent(ncInventory, "", "  ")
-		if err != nil {
-			log.Fatalf("Failed to marshal NC inventory: %v", err)
-		}
-
-		if err := ioutil.WriteFile(*outputNCFile, inventoryJSON, 0644); err != nil {
+		if err := writeInventory(inventoryOutput{
+			label: "NC",
+			path:  *outputNCFile,
+			items: ncInventory,
+		}); err != nil {
 			log.Fatalf("Failed to write NC inventory file: %v", err)
 		}
-
-		fmt.Fprintf(os.Stderr, "  Written to %s\n", *outputNCFile)
 	}
 
 	if !*enableVA && !*enableWake {
@@ -127,6 +125,20 @@ func main() {
 	if *enableWake {
 		fmt.Fprintf(os.Stderr, "  NC: %d items\n", len(ncInventory))
 	}
+}
+
+func writeInventory(output inventoryOutput) error {
+	inventoryJSON, err := json.MarshalIndent(output.items, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(output.path, inventoryJSON, 0644); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(os.Stderr, "  Written to %s\n", output.path)
+	return nil
 }
 
 // loadExistingInventory loads the existing inventory file

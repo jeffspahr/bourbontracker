@@ -9,8 +9,10 @@ The bourbon tracker has been refactored into a modular, extensible architecture 
 ```
 bourbontracker/
 ├── cmd/
-│   └── tracker/
-│       └── main.go          # Main entry point - orchestrates all trackers
+│   ├── tracker/
+│   │   └── main.go          # Main entry point - orchestrates all trackers
+│   └── alerter/
+│       └── main.go          # Alerting CLI for inventory changes
 ├── pkg/
 │   ├── tracker/
 │   │   └── tracker.go       # Common tracker interface and types
@@ -19,11 +21,12 @@ bourbontracker/
 │   │       └── tracker.go   # Virginia ABC implementation
 │   └── nc/
 │       └── wake/
-│           └── tracker.go   # Wake County, NC implementation (placeholder)
+│           └── tracker.go   # Wake County, NC implementation
 ├── stores                   # VA ABC store list
 ├── products.json            # Product codes to track
-├── inventory.json           # Combined output from all trackers
-└── map.html                 # Google Maps visualization
+├── inventory-va.json        # VA output from tracker
+├── inventory-nc.json        # NC output from tracker
+└── index.html               # Google Maps visualization
 ```
 
 ## Core Interface
@@ -120,8 +123,10 @@ Each county may have completely different inventory systems.
   -va              # Enable VA ABC (default: true)
   -wake            # Enable Wake County NC (default: false)
   -stores FILE     # VA ABC stores file (default: "stores")
-  -products FILE   # Products file (default: "products.json")
-  -output FILE     # Output JSON (default: "inventory.json")
+  -products FILE   # VA products file (default: "products.json")
+  -nc-products FILE # NC products file (default: "nc-products.json")
+  -output-va FILE  # VA output JSON (default: "inventory-va.json")
+  -output-nc FILE  # NC output JSON (default: "inventory-nc.json")
 ```
 
 ### Examples
@@ -191,7 +196,7 @@ Each county may have completely different inventory systems.
 3. **Extensibility:** Easy to add new regions
 4. **Flexibility:** Each tracker can use different APIs/methods
 5. **Error Isolation:** One tracker failure doesn't stop others
-6. **Backward Compatibility:** Maintains existing inventory.json format
+6. **Backward Compatibility:** Maintains the current inventory JSON schema
 
 ## Rate Limiting & Best Practices
 
@@ -215,7 +220,7 @@ type Config struct {
 
 ## Output Format
 
-All trackers write to a single `inventory.json` file:
+Trackers write to separate files (`inventory-va.json` and `inventory-nc.json` by default). Each file uses the same schema:
 
 ```json
 [

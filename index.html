@@ -551,6 +551,8 @@
         let selectedProducts = new Set();
         let selectedRegion = 'all';
         let selectedListing = 'all';
+        let regionInitialized = false;
+        const REGION_STORAGE_KEY = 'bt-region';
 
         // Region centers for distance calculation
         const REGION_CENTERS = {
@@ -572,7 +574,28 @@
 
         // Detect user's location and set default region
         async function setDefaultRegionByLocation() {
+            if (regionInitialized) {
+                return;
+            }
+
             try {
+                let storedRegion = null;
+                try {
+                    storedRegion = localStorage.getItem(REGION_STORAGE_KEY);
+                } catch (storageError) {
+                    console.log('Could not read saved region:', storageError.message);
+                }
+
+                if (storedRegion === 'VA' || storedRegion === 'NC' || storedRegion === 'all') {
+                    selectedRegion = storedRegion;
+                    const regionSelect = document.getElementById('region-select');
+                    if (regionSelect) {
+                        regionSelect.value = storedRegion;
+                    }
+                    regionInitialized = true;
+                    return;
+                }
+
                 // Use ipapi.co free IP geolocation service
                 const response = await fetch('https://ipapi.co/json/');
                 if (!response.ok) throw new Error('Geolocation failed');
@@ -599,6 +622,11 @@
                 if (regionSelect) {
                     regionSelect.value = closestRegion;
                 }
+                try {
+                    localStorage.setItem(REGION_STORAGE_KEY, closestRegion);
+                } catch (storageError) {
+                    console.log('Could not save selected region:', storageError.message);
+                }
 
                 // Auto-select "Allocation" filter for NC users
                 if (closestRegion === 'NC') {
@@ -611,9 +639,11 @@
                 } else {
                     console.log(`Auto-selected region: ${closestRegion} (${minDistance.toFixed(0)}km away)`);
                 }
+                regionInitialized = true;
             } catch (error) {
                 // Silently fail - keep default 'all' if geolocation doesn't work
                 console.log('Could not detect location, showing all regions:', error.message);
+                regionInitialized = true;
             }
         }
 
@@ -922,6 +952,11 @@
             // If changing to a different region, reload inventory
             if (newRegion !== selectedRegion) {
                 selectedRegion = newRegion;
+                try {
+                    localStorage.setItem(REGION_STORAGE_KEY, newRegion);
+                } catch (storageError) {
+                    console.log('Could not save selected region:', storageError.message);
+                }
                 document.getElementById('loading').style.display = 'block';
                 await loadInventory();
             }
