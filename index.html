@@ -516,15 +516,17 @@
             <option value="NC">North Carolina (Wake County)</option>
         </select>
 
-        <label for="listing-select">Listing Type:</label>
-        <select id="listing-select" onchange="filterByListing()">
-            <option value="all">All Types</option>
-            <option value="Limited">Limited</option>
-            <option value="Allocation">Allocation</option>
-            <option value="Listed">Listed</option>
-            <option value="Barrel">Barrel</option>
-            <option value="Christmas">Christmas</option>
-        </select>
+        <div id="listing-filter">
+            <label for="listing-select">Listing Type:</label>
+            <select id="listing-select" onchange="filterByListing()">
+                <option value="all">All Types</option>
+                <option value="Limited">Limited</option>
+                <option value="Allocation">Allocation</option>
+                <option value="Listed">Listed</option>
+                <option value="Barrel">Barrel</option>
+                <option value="Christmas">Christmas</option>
+            </select>
+        </div>
 
         <label for="product-search">Filter by Product:</label>
         <div id="product-filter-container">
@@ -592,6 +594,7 @@
                     if (regionSelect) {
                         regionSelect.value = storedRegion;
                     }
+                    updateListingVisibility(selectedRegion);
                     regionInitialized = true;
                     return;
                 }
@@ -637,12 +640,19 @@
                     }
                     console.log(`Auto-selected region: ${closestRegion} with Allocation filter (${minDistance.toFixed(0)}km away)`);
                 } else {
+                    selectedListing = 'all';
+                    const listingSelect = document.getElementById('listing-select');
+                    if (listingSelect) {
+                        listingSelect.value = 'all';
+                    }
                     console.log(`Auto-selected region: ${closestRegion} (${minDistance.toFixed(0)}km away)`);
                 }
+                updateListingVisibility(closestRegion);
                 regionInitialized = true;
             } catch (error) {
                 // Silently fail - keep default 'all' if geolocation doesn't work
                 console.log('Could not detect location, showing all regions:', error.message);
+                updateListingVisibility(selectedRegion);
                 regionInitialized = true;
             }
         }
@@ -777,7 +787,7 @@
                 );
             }
 
-            if (selectedListing !== 'all') {
+            if (selectedListing !== 'all' && selectedRegion === 'NC') {
                 filtered = filtered.filter(item =>
                     item['bt.listingType'] === selectedListing
                 );
@@ -957,9 +967,23 @@
                 } catch (storageError) {
                     console.log('Could not save selected region:', storageError.message);
                 }
+                selectedListing = 'all';
+                const listingSelect = document.getElementById('listing-select');
+                if (listingSelect) {
+                    listingSelect.value = 'all';
+                }
+                updateListingVisibility(newRegion);
                 document.getElementById('loading').style.display = 'block';
                 await loadInventory();
             }
+        }
+
+        function updateListingVisibility(region) {
+            const listingFilter = document.getElementById('listing-filter');
+            if (!listingFilter) {
+                return;
+            }
+            listingFilter.style.display = region === 'NC' ? 'block' : 'none';
         }
 
         function filterByListing() {
