@@ -218,6 +218,25 @@ type Config struct {
 - **Error Handling:** Skip problematic stores, don't fail entirely
 - **Logging:** Output progress to stderr, results to stdout
 
+## Deployment Pipeline
+
+**Inventory Refresh Workflow**:
+1. Runs on schedule (every 6 hours) or manual trigger
+2. Builds and executes the tracker to produce `inventory-va.json` and `inventory-nc.json`
+3. Sends allocation alerts using the previous run’s artifacts
+4. Uploads the latest inventory artifacts for deploys
+
+**Frontend Deploy Workflow**:
+1. Runs on push or manual trigger
+2. Downloads the latest inventory artifacts
+3. Injects the Google Maps API key into `index.html`
+4. Publishes static assets to Cloudflare Pages
+
+**Key Files**:
+- `.github/workflows/inventory-refresh.yml`: Inventory refresh + alerts workflow
+- `.github/workflows/deploy-cloudflare.yml`: Frontend deploy workflow
+- `.github/workflows/main.yml`: Docker build/test CI pipeline
+
 ## Output Format
 
 Trackers write to separate files (`inventory-va.json` and `inventory-nc.json` by default). Each file uses the same schema:
