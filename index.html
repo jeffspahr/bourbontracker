@@ -89,6 +89,13 @@
             color: #2c3e50;
             font-size: 14px;
             align-self: center;
+            margin: 0;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         #product-filter-container {
@@ -526,14 +533,16 @@
     </div>
 
     <div id="filters">
-        <label for="region-select">Region:</label>
-        <select id="region-select" onchange="filterByRegion()">
-            <option value="all">All Regions</option>
-            <option value="VA">Virginia (VA ABC)</option>
-            <option value="NC">North Carolina (Wake County)</option>
-        </select>
+        <div class="filter-group">
+            <label for="region-select">Region:</label>
+            <select id="region-select" onchange="filterByRegion()">
+                <option value="all">All Regions</option>
+                <option value="VA">Virginia (VA ABC)</option>
+                <option value="NC">North Carolina (Wake County)</option>
+            </select>
+        </div>
 
-        <div id="listing-filter">
+        <div id="listing-filter" class="filter-group">
             <label for="listing-select">Listing Type:</label>
             <select id="listing-select" onchange="filterByListing()">
                 <option value="all">All Types</option>
@@ -545,11 +554,13 @@
             </select>
         </div>
 
-        <label for="product-search">Filter by Product:</label>
-        <div id="product-filter-container">
-            <input type="text" id="product-search" placeholder="Type to search products..." autocomplete="off">
-            <div id="product-dropdown"></div>
-            <div id="selected-products"></div>
+        <div class="filter-group" style="flex: 1; min-width: 260px;">
+            <label for="product-search">Filter by Product:</label>
+            <div id="product-filter-container">
+                <input type="text" id="product-search" placeholder="Type to search products..." autocomplete="off">
+                <div id="product-dropdown"></div>
+                <div id="selected-products"></div>
+            </div>
         </div>
         <div class="filter-buttons">
             <button class="filter-btn filter-btn-select" onclick="selectAllProducts()">Select All (Filtered)</button>
