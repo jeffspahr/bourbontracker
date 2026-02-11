@@ -1,4 +1,4 @@
-FROM golang:1.26rc3 AS builder
+FROM golang:1.26 AS builder
 LABEL maintainer="spahrj@gmail.com"
 LABEL org.opencontainers.image.source="https://github.com/jeffspahr/bourbontracker"
 
