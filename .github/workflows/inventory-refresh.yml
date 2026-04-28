@@ -93,7 +93,7 @@ jobs:
         timeout-minutes: 5
 
       - name: Upload inventory artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: inventory-${{ github.run_number }}
           path: |
