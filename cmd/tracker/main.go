@@ -223,7 +223,14 @@ func mergeInventory(existing, new []tracker.InventoryItem, refreshedProducts []s
 	}
 
 	// Keep existing items that weren't updated
-	merged := make([]tracker.InventoryItem, 0, len(existing)+len(new))
+	existingLen := len(existing)
+	newLen := len(new)
+	maxInt := int(^uint(0) >> 1)
+	capacity := existingLen
+	if existingLen <= maxInt-newLen {
+		capacity = existingLen + newLen
+	}
+	merged := make([]tracker.InventoryItem, 0, capacity)
 	for _, item := range existing {
 		// Skip NC items that were updated
 		if item.State == "NC" && item.County == "Wake" && updatedProducts[item.ProductID] {
