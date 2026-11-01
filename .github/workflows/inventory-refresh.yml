@@ -49,6 +49,8 @@ jobs:
             # Copy as .previous for alerter comparison
             cp "$LATEST/inventory-va.json" inventory-va.json.previous 2>/dev/null || echo "No VA inventory cached"
             cp "$LATEST/inventory-nc.json" inventory-nc.json.previous 2>/dev/null || echo "No NC inventory cached"
+            # The tracker reads the active filename for product freshness.
+            cp "$LATEST/inventory-nc.json" inventory-nc.json 2>/dev/null || echo "No NC cache to restore"
             ls -lh inventory-*.json* 2>/dev/null || echo "No cached inventory files"
           else
             echo "No previous inventory found - will perform full scan"

@@ -68,12 +68,9 @@ func New(productsFile string) (*Tracker, error) {
 }
 
 // SetProductsToTrack sets specific products to track (by NC Code)
-// If nil or empty, all products will be tracked
+// Calling this with nil or an empty slice selects no products. A new tracker
+// searches all products until a selection is explicitly set.
 func (t *Tracker) SetProductsToTrack(ncCodes []string) {
-	if len(ncCodes) == 0 {
-		t.productsToTrack = nil
-		return
-	}
 	t.productsToTrack = make(map[string]bool)
 	for _, code := range ncCodes {
 		t.productsToTrack[code] = true
@@ -101,6 +98,11 @@ func (t *Tracker) StoreCount() int {
 
 // Track queries Wake County inventory and returns items
 func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
+	for code := range t.productsToTrack {
+		if _, ok := t.products[code]; !ok {
+			return nil, fmt.Errorf("unknown selected product %q", code)
+		}
+	}
 	type result struct {
 		items []tracker.InventoryItem
 		err   error
@@ -153,17 +155,30 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 				fmt.Fprintf(log.Writer(), "  Found %d items for %s (%s)\n", len(items), ncCode, product.BrandName)
 			}
 
+			if err != nil {
+				err = fmt.Errorf("product %s: %w", ncCode, err)
+			}
 			results <- result{items: items, err: err}
 		}()
 	}
 
 	// Collect results
 	var allItems []tracker.InventoryItem
+	var firstErr error
+	failed := 0
 	for i := 0; i < productsToSearch; i++ {
 		res := <-results
 		if res.err == nil {
 			allItems = append(allItems, res.items...)
+		} else {
+			failed++
+			if firstErr == nil {
+				firstErr = res.err
+			}
 		}
+	}
+	if failed > 0 {
+		return nil, fmt.Errorf("incomplete refresh: %d of %d products failed: %w", failed, productsToSearch, firstErr)
 	}
 
 	return allItems, nil
@@ -211,30 +226,77 @@ func (t *Tracker) parseSearchResults(ncCode string, product NCProduct, html stri
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
+	results := doc.Find("#productSearchResults")
+	if results.Length() != 1 {
+		return nil, fmt.Errorf("missing or ambiguous product search results")
+	}
+	products := results.Find("div.wake-product")
+	if products.Length() == 0 {
+		// This exact, scoped marker is emitted by Wake for a valid no-match
+		// search. An arbitrary HTTP 200 page must never clear cached stock.
+		noMatch := false
+		results.ChildrenFiltered("p").Each(func(_ int, p *goquery.Selection) {
+			if strings.TrimSpace(p.Text()) == "Sorry, your search did not return any results." {
+				noMatch = true
+			}
+		})
+		if noMatch {
+			return []tracker.InventoryItem{}, nil
+		}
+		return nil, fmt.Errorf("unrecognized empty search results for product %s", ncCode)
+	}
+
 	var items []tracker.InventoryItem
+	var parseErr error
+	matched := false
 	now := time.Now()
 
 	// Find all product divs
-	doc.Find("div.wake-product").Each(func(i int, s *goquery.Selection) {
+	products.Each(func(i int, s *goquery.Selection) {
+		if extractPLU(s.Find("small").Text()) != ncCode {
+			return
+		}
+		matched = true
 		// Extract product name
 		productName := strings.TrimSpace(s.Find("h4").Text())
+		if productName == "" {
+			parseErr = fmt.Errorf("missing name for product %s", ncCode)
+			return
+		}
 
 		// Check if out of stock
 		outOfStock := s.Find("p.out-of-stock").Length() > 0
 		if outOfStock {
+			if strings.TrimSpace(s.Find("p.out-of-stock").Text()) != "All Locations Out of Stock" || s.Find("div.inventory-collapse li").Length() > 0 {
+				parseErr = fmt.Errorf("unrecognized or conflicting out-of-stock response for product %s", ncCode)
+			}
 			// Skip out of stock items
 			return
 		}
 
 		// Extract store inventory
-		s.Find("div.inventory-collapse ul li").Each(func(j int, store *goquery.Selection) {
+		stores := s.Find("div.inventory-collapse ul li")
+		if stores.Length() == 0 {
+			parseErr = fmt.Errorf("missing inventory or out-of-stock marker for product %s", ncCode)
+			return
+		}
+		stores.Each(func(j int, store *goquery.Selection) {
 			// Extract address
 			addressHTML, _ := store.Find("span.address").Html()
 			address := parseAddress(addressHTML)
 
 			// Extract quantity
 			quantityText := store.Find("span.quantity").Text()
-			quantity := extractQuantity(quantityText)
+			quantityMatch := quantityPattern.FindStringSubmatch(quantityText)
+			if address == "" || len(quantityMatch) != 2 {
+				parseErr = fmt.Errorf("invalid store inventory for product %s", ncCode)
+				return
+			}
+			quantity, err := strconv.Atoi(quantityMatch[1])
+			if err != nil {
+				parseErr = fmt.Errorf("invalid quantity for product %s: %w", ncCode, err)
+				return
+			}
 
 			if quantity > 0 {
 				// Get store coordinates
@@ -268,6 +330,12 @@ func (t *Tracker) parseSearchResults(ncCode string, product NCProduct, html stri
 			}
 		})
 	})
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if !matched {
+		return nil, fmt.Errorf("search results did not contain requested product %s", ncCode)
+	}
 
 	return items, nil
 }
@@ -282,16 +350,7 @@ func extractPLU(text string) string {
 	return "unknown"
 }
 
-// extractQuantity extracts quantity from text like "24 in stock"
-func extractQuantity(text string) int {
-	re := regexp.MustCompile(`(\d+)\s+in stock`)
-	matches := re.FindStringSubmatch(text)
-	if len(matches) > 1 {
-		qty, _ := strconv.Atoi(matches[1])
-		return qty
-	}
-	return 0
-}
+var quantityPattern = regexp.MustCompile(`^\s*(\d+)\s+in stock\s*$`)
 
 // parseAddress extracts clean address from HTML like "7200 Sandy Fork Rd.<br/>Raleigh, NC 27609"
 func parseAddress(htmlAddress string) string {
