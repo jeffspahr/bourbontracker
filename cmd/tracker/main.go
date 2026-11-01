@@ -92,16 +92,14 @@ func main() {
 		duration := time.Since(startTime)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: %s tracker failed: %v\n", wakeTracker.Name(), err)
-			// Use existing inventory if tracking fails
-			ncInventory = existingNCInventory
-		} else {
-			fmt.Fprintf(os.Stderr, "  Completed in %v\n", duration)
-			fmt.Fprintf(os.Stderr, "  Found %d items\n", len(items))
-
-			// Merge new NC data with existing NC data
-			ncInventory = mergeInventory(existingNCInventory, items)
+			log.Fatalf("ERROR: %s tracker failed; cached inventory unchanged: %v", wakeTracker.Name(), err)
 		}
+		fmt.Fprintf(os.Stderr, "  Completed in %v\n", duration)
+		fmt.Fprintf(os.Stderr, "  Found %d items\n", len(items))
+
+		// Track succeeds only when every selected product was refreshed. Include
+		// successful zero-stock products when removing their previous records.
+		ncInventory = mergeInventory(existingNCInventory, items, productsToUpdate)
 
 		if err := writeInventory(inventoryOutput{
 			label: "NC",
@@ -128,6 +126,9 @@ func main() {
 }
 
 func writeInventory(output inventoryOutput) error {
+	if output.items == nil {
+		output.items = []tracker.InventoryItem{}
+	}
 	inventoryJSON, err := json.MarshalIndent(output.items, "", "  ")
 	if err != nil {
 		return err
@@ -213,18 +214,16 @@ func getProductsNeedingUpdate(wakeTracker *wake.Tracker, existingInventory []tra
 	return productsToUpdate
 }
 
-// mergeInventory merges new inventory with existing, replacing old NC data with new
-func mergeInventory(existing, new []tracker.InventoryItem) []tracker.InventoryItem {
-	// Create set of product IDs that were updated
+// mergeInventory replaces only successfully refreshed Wake products, including
+// those with zero stock. Call only after the entire selected refresh succeeds.
+func mergeInventory(existing, new []tracker.InventoryItem, refreshedProducts []string) []tracker.InventoryItem {
 	updatedProducts := make(map[string]bool)
-	for _, item := range new {
-		if item.State == "NC" && item.County == "Wake" {
-			updatedProducts[item.ProductID] = true
-		}
+	for _, code := range refreshedProducts {
+		updatedProducts[code] = true
 	}
 
 	// Keep existing items that weren't updated
-	var merged []tracker.InventoryItem
+	merged := make([]tracker.InventoryItem, 0, len(existing)+len(new))
 	for _, item := range existing {
 		// Skip NC items that were updated
 		if item.State == "NC" && item.County == "Wake" && updatedProducts[item.ProductID] {

@@ -163,12 +163,11 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 			fmt.Fprintf(os.Stderr, "Got HTTP %d for store %s (retry %d, backoff %ds)\n",
 				resp.StatusCode, t.stores[h], t.storeRetries[h], t.waitTime)
 
-			// Skip stores that consistently fail
+			// Missing stores make this snapshot incomplete. Never publish the
+			// successful subset as if it were a complete inventory refresh.
 			if t.storeRetries[h] >= t.config.MaxRetries {
-				fmt.Fprintf(os.Stderr, "Skipping store %s after %d failed attempts\n",
-					t.stores[h], t.storeRetries[h])
-				t.waitTime = 1 // Reset backoff
-				continue
+				return nil, fmt.Errorf("incomplete refresh: store %s failed after %d attempts (HTTP %d)",
+					t.stores[h], t.storeRetries[h], resp.StatusCode)
 			}
 
 			time.Sleep(time.Duration(t.waitTime) * time.Second)
@@ -189,6 +188,9 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		var pIn payloadIn
 		if err := json.Unmarshal(body, &pIn); err != nil {
 			return nil, fmt.Errorf("failed to parse response for store %s: %w", t.stores[h], err)
+		}
+		if pIn.Products == nil {
+			return nil, fmt.Errorf("missing products in response for store %s", t.stores[h])
 		}
 
 		// Convert to common inventory format
