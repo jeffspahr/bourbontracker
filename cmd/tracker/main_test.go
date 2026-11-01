@@ -88,6 +88,25 @@ func TestMergeInventoryUsesSuccessfulSelectionIncludingZeroStock(t *testing.T) {
 	}
 }
 
+func TestMergeInventoryDoesNotAliasInputs(t *testing.T) {
+	existing := []tracker.InventoryItem{{ProductID: "A", State: "NC", County: "Wake", Quantity: 7}}
+	incoming := []tracker.InventoryItem{{ProductID: "B", State: "NC", County: "Wake", Quantity: 2}}
+
+	merged := mergeInventory(existing, incoming, []string{"B"})
+	if len(merged) != 2 {
+		t.Fatalf("merged inventory has %d items, want 2", len(merged))
+	}
+	merged[0].Quantity = 99
+	merged[1].Quantity = 98
+	if existing[0].Quantity != 7 || incoming[0].Quantity != 2 {
+		t.Fatalf("merged inventory aliases its inputs: existing=%v incoming=%v", existing, incoming)
+	}
+
+	if empty := mergeInventory(nil, nil, nil); empty == nil || len(empty) != 0 {
+		t.Fatalf("empty merge must return an empty array, got %v", empty)
+	}
+}
+
 func TestWriteEmptyInventoryAsArray(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "inventory.json")
 	if err := writeInventory(inventoryOutput{path: path}); err != nil {

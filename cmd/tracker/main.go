@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"time"
 
@@ -223,18 +222,9 @@ func mergeInventory(existing, new []tracker.InventoryItem, refreshedProducts []s
 		updatedProducts[code] = true
 	}
 
-	// Keep existing items that weren't updated
-	existingLen := len(existing)
-	newLen := len(new)
-
-	capacity := existingLen
-	if newLen <= math.MaxInt-existingLen {
-		capacity = existingLen + newLen
-	} else {
-		capacity = math.MaxInt
-	}
-
-	merged := make([]tracker.InventoryItem, 0, capacity)
+	// Allocate only for retained items, without summing input lengths or
+	// reserving space for records that will be discarded.
+	merged := make([]tracker.InventoryItem, 0)
 	for _, item := range existing {
 		// Skip NC items that were updated
 		if item.State == "NC" && item.County == "Wake" && updatedProducts[item.ProductID] {
