@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jeffspahr/bourbontracker/pkg/tracker"
@@ -113,6 +115,7 @@ func (t *Tracker) StoreCount() int {
 // Track queries all stores and returns inventory items
 func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 	var inventory []tracker.InventoryItem
+	refreshedStores := 0
 
 	// Create comma-delimited product list for query string
 	productListString := ""
@@ -159,6 +162,13 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 
 		// Handle non-200 responses
 		if resp.StatusCode != 200 {
+			// The checked-in store list can outlive a store. Only this exact,
+			// store-specific API response confirms that it is no longer in the
+			// inventory catalog. Other HTTP 400s remain refresh failures.
+			if isNonexistentStore(resp.StatusCode, body, t.stores[h]) {
+				fmt.Fprintf(os.Stderr, "VA ABC confirms store %s does not exist; excluding it from this refresh\n", t.stores[h])
+				continue
+			}
 			t.storeRetries[h]++
 			fmt.Fprintf(os.Stderr, "Got HTTP %d for store %s (retry %d, backoff %ds)\n",
 				resp.StatusCode, t.stores[h], t.storeRetries[h], t.waitTime)
@@ -192,6 +202,7 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		if pIn.Products == nil {
 			return nil, fmt.Errorf("missing products in response for store %s", t.stores[h])
 		}
+		refreshedStores++
 
 		// Convert to common inventory format
 		for i := range pIn.Products {
@@ -218,5 +229,15 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 		}
 	}
 
+	// An all-missing response could indicate an upstream catalog outage.
+	// Do not replace the entire inventory with an unverified empty snapshot.
+	if len(t.stores) > 0 && refreshedStores == 0 {
+		return nil, fmt.Errorf("incomplete refresh: no stores returned inventory")
+	}
 	return inventory, nil
+}
+
+func isNonexistentStore(status int, body []byte, store string) bool {
+	return status == http.StatusBadRequest &&
+		strings.TrimSpace(html.UnescapeString(string(body))) == fmt.Sprintf("No Store exists for store number '%s'", store)
 }
