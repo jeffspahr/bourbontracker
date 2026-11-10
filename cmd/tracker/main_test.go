@@ -197,3 +197,57 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestNonexistentVAStoreDoesNotBlockWakeCLI(t *testing.T) {
+	if dir := os.Getenv("TRACKER_TEST_MISSING_VA_STORE"); dir != "" {
+		*enableVA, *enableWake = true, true
+		*storesFile, *productsFile = filepath.Join(dir, "stores"), filepath.Join(dir, "products.json")
+		*ncProductsFile = filepath.Join(dir, "nc-products.json")
+		*outputVAFile, *outputNCFile = filepath.Join(dir, "inventory-va.json"), filepath.Join(dir, "inventory-nc.json")
+		http.DefaultTransport = stubTransport(func(r *http.Request) (*http.Response, error) {
+			status, body := 200, `<div id="productSearchResults"><p>Sorry, your search did not return any results.</p></div>`
+			if r.URL.Host == "www.abc.virginia.gov" {
+				if r.URL.Query().Get("storeNumbers") == "325" {
+					status, body = 400, "No Store exists for store number &#39;325&#39;"
+				} else {
+					body = `{"products":[{"productId":"P","storeInfo":{"quantity":7,"storeId":32}}]}`
+				}
+			}
+			return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(body))}, nil
+		})
+		os.Args = []string{"tracker"}
+		main()
+		return
+	}
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "stores"), "325\n32\n")
+	writeFile(t, filepath.Join(dir, "products.json"), `{"P":"Fixture"}`)
+	writeFile(t, filepath.Join(dir, "nc-products.json"), `[{"nc_code":"00026","brand_name":"Fixture","listing_type":"Listed"}]`)
+	writeFile(t, filepath.Join(dir, "inventory-va.json"), `[{"bt.productId":"P","bt.state":"VA","bt.storeId":"325","bt.quantity":5}]`)
+	writeFile(t, filepath.Join(dir, "inventory-nc.json"), `[{"bt.productId":"00026","bt.state":"NC","bt.county":"Wake","bt.quantity":7,"@timestamp":"2020-01-01T00:00:00Z"}]`)
+	cmd := exec.Command(os.Args[0], "-test.run=^TestNonexistentVAStoreDoesNotBlockWakeCLI$")
+	cmd.Env = append(os.Environ(), "TRACKER_TEST_MISSING_VA_STORE="+dir)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("refresh failed: err=%v output=%s", err, output)
+	}
+	vaData, err := os.ReadFile(filepath.Join(dir, "inventory-va.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var vaItems []tracker.InventoryItem
+	if err := json.Unmarshal(vaData, &vaItems); err != nil {
+		t.Fatal(err)
+	}
+	if len(vaItems) != 1 || vaItems[0].StoreID != "32" || vaItems[0].Quantity != 7 {
+		t.Fatalf("VA snapshot retained a missing store or lost active inventory: %s", vaData)
+	}
+	ncData, err := os.ReadFile(filepath.Join(dir, "inventory-nc.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(ncData) != "[]" {
+		t.Fatalf("Wake refresh did not run and clear zero stock: %s output=%s", ncData, output)
+	}
+}
