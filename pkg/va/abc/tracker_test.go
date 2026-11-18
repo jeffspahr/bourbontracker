@@ -80,6 +80,20 @@ func TestNonexistentStoreDoesNotBlockActiveStores(t *testing.T) {
 	}
 }
 
+func TestPaddedNonexistentStoreResponse(t *testing.T) {
+	body, err := os.ReadFile("testdata/nonexistent-store-78.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !isNonexistentStore(400, body, "78") {
+		t.Fatal("did not recognize store 078 for requested store 78")
+	}
+	if isNonexistentStore(400, body, "77") || isNonexistentStore(503, body, "78") ||
+		isNonexistentStore(400, []byte("No Store exists for store number '0078'"), "78") {
+		t.Fatal("accepted an unverified store response")
+	}
+}
+
 func TestNonexistentStoreResponseMustBeExact(t *testing.T) {
 	for _, tc := range []struct {
 		name, body string

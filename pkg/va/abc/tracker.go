@@ -238,6 +238,17 @@ func (t *Tracker) Track() ([]tracker.InventoryItem, error) {
 }
 
 func isNonexistentStore(status int, body []byte, store string) bool {
-	return status == http.StatusBadRequest &&
-		strings.TrimSpace(html.UnescapeString(string(body))) == fmt.Sprintf("No Store exists for store number '%s'", store)
+	if status != http.StatusBadRequest {
+		return false
+	}
+	const message = "No Store exists for store number '%s'"
+	got := strings.TrimSpace(html.UnescapeString(string(body)))
+	if got == fmt.Sprintf(message, store) {
+		return true
+	}
+	// ABC can echo short numeric store IDs padded to three digits (78 as 078).
+	if len(store) == 0 || len(store) >= 3 || strings.Trim(store, "0123456789") != "" {
+		return false
+	}
+	return got == fmt.Sprintf(message, strings.Repeat("0", 3-len(store))+store)
 }
